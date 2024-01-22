@@ -5,6 +5,8 @@ import os
 from music21 import *
 
 MARKS=['A','B','C','D']
+QUARTER_DURATION= { '32nd': '0.125', '16th' : '0.25' , 'eighth' : '0.5' ,'quarter' : '1.0' ,'half' : '2.0'}
+
 
 def check_folder_exists(folder_path):
     if not(os.path.exists(folder_path) and os.path.isdir(folder_path)):
@@ -48,6 +50,40 @@ def data_to_json(folder):
             dictionnary= score_to_dict(s)
             D.append(dictionnary)
     return D
+
+def json_into_x_melody(folder,x):
+    '''Enregistre la liste des x premieres melodies de data.json'''
+    file_path=folder+'/'+'data.json'
+    if not(os.path.exists(file_path) and os.path.isfile(file_path)):
+        print(f"The file '{file_path}' does not exist.  Exiting program.")
+        return []
+
+    with open(folder+"/"+'data.json','r') as file: #le fichier crée par extract_data.py
+        data= json.load(file)
+
+    dataset = []    
+    for P in data:
+        parts=[]
+        #derterminer les parties de la partition
+        for name_part in MARKS:
+            if name_part in P:
+                parts.append(name_part)
+        #chaque melodie
+        for part in parts:
+            all_notes=""
+            #chaque mesure
+            for k in P[part].keys():
+                if k!='key':
+                    notes=P[part][k]['Notes']
+                    for note in notes:
+                        all_notes+=note[0]+"-"+QUARTER_DURATION[note[1]]+', '
+            if len(all_notes)!=0:
+                dataset.append(all_notes[:-2])
+                if len(dataset)==x:                #x melody
+                    break
+    print(len(dataset))
+    with open('Data/dataset.json','w') as file:
+        json.dump(dataset,file) 
             
 
 def get_measure_indices_for_rehearsal_marks(score):
@@ -291,15 +327,27 @@ if __name__ == "__main__":
     check_folder_exists(path)
     if len(sys.argv) == 2:
         score_name=sys.argv[1]
-        s=open_one_xml(path,score_name)
-        show_stat(s)
-    
+        if score_name =="melodies":
+            json_into_x_melody("Data/",-1)
+            print("Toutes les melodies ont étés générées.")
+        else:
+            s=open_one_xml(path,score_name)
+            show_stat(s)
+
     elif len(sys.argv) == 1:
         file_output="data.json"
         D= data_to_json(path)
         with open(file_output, 'w',encoding="utf-8") as f:
             json.dump(D,f,indent=2)
         print(f'{file_output} with {len(D)} scores created.')
+    elif len(sys.argv) == 3:
+        x=int(sys.argv[1])
+        y=sys.argv[2]
+        if y ==" melodies":
+            json_into_x_melody("Data/",x)
+        else:
+            print("Le deuxieme arguments != melodies")
+            sys.exit()
     else:
         print("L'application prend soit 1 fichier xml en entree (affichage de la partition) soit 0 argument (tous les XML sont extraits dans data.jspn")
         sys.exit()
