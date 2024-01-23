@@ -2,6 +2,7 @@ import json
 import sys
 import music21
 import os
+import random
 from music21 import *
 
 MARKS=['A','B','C','D']
@@ -324,42 +325,121 @@ def score_to_dict(score):
                     break
     return D
 
+def extract_random_seq(jsonfile,lg):
+    '''Retourne (nom de la partition, nom de la partie, clé, et les lg premieres notes sous forme de string) d'une partie d'une partition au hasard'''
+    if not(os.path.isfile(jsonfile)):
+        print(f"The file '{jsonfile}' does not exist.  Exiting program.")
+        return ()
+
+    with open(jsonfile,'r') as file: #le fichier crée par extract_data.py
+        data = json.load(file)
+
+    selected_notes = []
+
+    while len(selected_notes) < lg: # au cas où il n'y aurait pas assez de notes dans la partie de la partition sélectionnée
+
+        # choix au hasard d'une partition
+        selected_score = random.choice(data)
+
+        # choix au hasard d'une partie de cette partition
+        parts = [key for key in selected_score.keys() if key in MARKS]
+        name_part = random.choice(parts)
+        selected_part = selected_score[name_part]
+
+        # conservation des lg premières notes
+        all_notes = [item['Notes'] for measure, item in selected_part.items() if measure.isdigit()]
+        selected_notes = [item for sublist in all_notes for item in sublist][:lg]
+
+    random_seq = [selected_score['title'],name_part,selected_part['key'],selected_notes]
+
+    with open('data/random_seq.json','w') as file:
+        json.dump(random_seq,file) 
+
+    return selected_score['title'],name_part
+
+def extract_random_seq_from(jsonfile,desired_score,desired_part):
+    '''Retourne (nom de la partition, nom de la partie, clé, et les lg premieres notes sous forme de string) de la partie d'une partition données'''
+    if not(os.path.isfile(jsonfile)):
+        print(f"The file '{jsonfile}' does not exist.  Exiting program.")
+        return ()
+
+    with open(jsonfile,'r') as file: #le fichier crée par extract_data.py
+        data = json.load(file)
+
+    selected_score = None
+    selected_part = None
+
+    for score in data:
+        if score.get('title') == desired_score:
+            selected_score = score
+            break
+
+    if selected_score == None:
+        print("La partition",desired_score,"n'existe pas.")
+        return ()
+
+    for part in selected_score.keys():
+        if part == desired_part:
+            selected_part = selected_score[part]
+            all_notes = [item['Notes'] for measure, item in selected_part.items() if measure.isdigit()]
+            break
+
+    if selected_part == None:
+            print("La partie",desired_part,"de la partition",desired_score,"n'existe pas.")
+            return ()
+
+    random_seq_from = [selected_score['title'],part,selected_part['key'],all_notes]
+
+    with open('data/random_seq_from_'+desired_score+'_'+part+'.json','w') as file:
+        json.dump(random_seq_from,file) 
+
+    return selected_score['title'],part
+
 if __name__ == "__main__":
     path="data/data_xml"
     check_folder_exists(path)
     if len(sys.argv) == 2:
         score_name=sys.argv[1]
         if score_name =="melodies":
-            json_into_x_melody("Data/",-1)
+            json_into_x_melody("data/",-1)
             print("Toutes les melodies ont étés générées.")
         else:
             s=open_one_xml(path,score_name)
             show_stat(s)
 
     elif len(sys.argv) == 1:
-        file_output="data.json"
+        file_output="data/data.json"
         D= data_to_json(path)
         with open(file_output, 'w',encoding="utf-8") as f:
             json.dump(D,f,indent=2)
         print(f'{file_output} with {len(D)} scores created.')
+
     elif len(sys.argv) == 3:
         x=int(sys.argv[1])
         y=sys.argv[2]
         if y =="melodies":
-            n=json_into_x_melody("Data/",x)
+            n=json_into_x_melody("data/",x)
             print(f'{n} melodies generated')
+        elif y == "random":
+            jsonfile = "data/data.json"
+            title,part = extract_random_seq(jsonfile,x)
+            print(f'Random sequence of {x} notes generated from {title},{part}.')
         else:
-            print("Le deuxieme arguments != melodies")
+            print("Le deuxieme argument != melodies ou != random")
             sys.exit()
+
+    elif len(sys.argv) == 4:
+        score = sys.argv[1]
+        part = sys.argv[2]
+        x = sys.argv[3]
+        if x == "random":
+            jsonfile = "data/data.json"
+            extract_random_seq_from(jsonfile,score,part)
+            print(f'Random sequence generated from {score},{part}.')
+        else:
+            print("Le troisième argument != random")
+            sys.exit()
+
     else:
         print("L'application prend soit 1 fichier xml en entree (affichage de la partition) soit 0 argument (tous les XML sont extraits dans data.jspn")
         sys.exit()
-    
-
-    
-
-
-    
-    
-
-
