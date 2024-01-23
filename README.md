@@ -8,6 +8,8 @@
   * **python extract_data.py** "nom_fichier_xml"  : affiche le contenu de la partition
   * **python extract_data.py** "melodies"  : créer le fichier Data/dataset.json contenant toutes les melodies du fichiers data.json sous forme de liste
   * **python extract_data.py** "x" "melodies"  : créer le fichier Data/dataset.json contenant les x premieres melodies du fichiers data.json sous forme de liste
+  * **python extract_data.py** "lg" "random" : créer un fichier data/random_seq.json contenant (nom de la partition, nom de la partie, clé, et les lg premieres notes sous forme de string) d'une partie d'une partition au hasard
+  * **python extract_data.py** "score" "part" "random" : créer un fichier data/random_seq_from_[score]_[part].json contenant (nom de la partition, nom de la partie, clé, toutes les notes de la partie) d'une partie d'une partition données
   
   [Usage]
 ## Requirements
