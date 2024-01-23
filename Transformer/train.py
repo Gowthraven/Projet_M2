@@ -87,12 +87,19 @@ def _train_step(input, target, transformer):
     target_real = _right_pad_sequence_once(target[:, 1:])
     # Open a GradientTape to record the operations run
     # during the forward pass, which enables auto-differentiation
+
+    # Create masks for both encoder and decoder
+    encoder_padding_mask = _create_padding_mask(input)
+    decoder_padding_mask = _create_padding_mask(target_input)
+    look_ahead_mask = _create_look_ahead_mask(target_input.shape[1])
+
+
     with tf.GradientTape() as tape:
         # Forward pass through the transformer model
         # TODO: Add padding mask for encoder + decoder and look-ahead mask
         # for decoder
-        predictions = transformer(input, target_input, True, None, None, None)
-
+        #predictions = transformer(input, target_input, True, None, None, None)
+        predictions = transformer(input, target_input, True, encoder_padding_mask, decoder_padding_mask, look_ahead_mask)
         # Compute loss between the real output and the predictions
         loss = _calculate_loss(target_real, predictions)
 
@@ -106,6 +113,40 @@ def _train_step(input, target, transformer):
     # Return the computed loss for this training step
     return loss
 
+def _create_padding_mask(seq):
+    """
+    Creates a mask for padding tokens in a sequence.
+
+    Parameters:
+        seq (tf.Tensor): Input sequence.
+
+    Returns:
+        tf.Tensor: Padding mask tensor.
+    """
+    # Find padding tokens (where seq is equal to 0)
+    padding_mask = tf.math.equal(seq, 0)
+    
+    # Add extra dimensions to the mask for broadcasting
+    # to the attention logits shape
+    padding_mask = tf.cast(padding_mask, tf.float32)
+    return padding_mask[:, tf.newaxis, tf.newaxis, :]
+
+def _create_look_ahead_mask(size):
+    """
+    Creates a mask for preventing positions from attending to subsequent positions.
+
+    Parameters:
+        size (int): Size of the sequence.
+
+    Returns:
+        tf.Tensor: Look-ahead mask tensor.
+    """
+    # Create a lower triangular matrix with ones
+    # This forms the upper triangular part of the mask
+    ones = tf.ones((size, size))
+    look_ahead_mask = 1 - tf.linalg.band_part(ones, -1, 0)
+
+    return look_ahead_mask
 
 def _calculate_loss(real, pred):
     """

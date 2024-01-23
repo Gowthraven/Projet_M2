@@ -40,7 +40,7 @@ class MelodyGenerator:
     based on a starting sequence.
     """
 
-    def __init__(self, transformer, tokenizer, max_length=50):
+    def __init__(self, transformer, tokenizer, max_length=100):
         """
         Initializes the MelodyGenerator.
 
@@ -105,8 +105,10 @@ class MelodyGenerator:
             predicted_note (int): The index of the predicted note.
         """
         latest_predictions = predictions[:, -1, :]
-        predicted_note_index = tf.argmax(latest_predictions, axis=1)
-        predicted_note = predicted_note_index.numpy()[0]
+        #predicted_note_index = tf.argmax(latest_predictions, axis=1)
+        predicted_note= tf.random.categorical(latest_predictions, num_samples=1)
+        predicted_note = predicted_note.numpy().item()
+        #predicted_note = predicted_note_index.numpy()[0]
         return predicted_note
 
     def _append_predicted_note(self, input_tensor, predicted_note):
