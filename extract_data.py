@@ -80,10 +80,12 @@ def json_into_x_melody(folder,x):
             if len(all_notes)!=0:
                 dataset.append(all_notes[:-2])
                 if len(dataset)==x:                #x melody
-                    break
-    print(len(dataset))
+                    with open('Data/dataset.json','w') as file:
+                        json.dump(dataset,file) 
+                    return len(dataset)
     with open('Data/dataset.json','w') as file:
         json.dump(dataset,file) 
+    return len(dataset)
             
 
 def get_measure_indices_for_rehearsal_marks(score):
@@ -343,8 +345,9 @@ if __name__ == "__main__":
     elif len(sys.argv) == 3:
         x=int(sys.argv[1])
         y=sys.argv[2]
-        if y ==" melodies":
-            json_into_x_melody("Data/",x)
+        if y =="melodies":
+            n=json_into_x_melody("Data/",x)
+            print(f'{n} melodies generated')
         else:
             print("Le deuxieme arguments != melodies")
             sys.exit()
