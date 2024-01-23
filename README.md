@@ -6,8 +6,8 @@
   ### extract_data.py
   * **python extract_data.py**  : créer le fichier Data/data.json contenant toutes les partitions selon la structure du fichier structure.json
   * **python extract_data.py** "nom_fichier_xml"  : affiche le contenu de la partition
-  * **python extract_data.py** "melodies"  : créer le fichier Data/daset.json contenant toutes les melodies du fichiers data.json sous forme de liste
-  * **python extract_data.py** "x" "melodies"  : créer le fichier Data/daset.json contenant les x premieres melodies du fichiers data.json sous forme de liste
+  * **python extract_data.py** "melodies"  : créer le fichier Data/dataset.json contenant toutes les melodies du fichiers data.json sous forme de liste
+  * **python extract_data.py** "x" "melodies"  : créer le fichier Data/dataset.json contenant les x premieres melodies du fichiers data.json sous forme de liste
   
   [Usage]
 ## Requirements
