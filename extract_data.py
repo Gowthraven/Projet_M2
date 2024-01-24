@@ -6,7 +6,7 @@ import random
 from music21 import *
 
 MARKS=['A','B','C','D']
-QUARTER_DURATION= { '32nd': '0.125', '16th' : '0.25' , 'eighth' : '0.5' ,'quarter' : '1.0' ,'half' : '2.0'}
+QUARTER_DURATION= { '64th' : '0.0675' , '32nd': '0.125', '16th' : '0.25' , 'eighth' : '0.5' ,'quarter' : '1.0' ,'half' : '2.0'}
 
 
 def check_folder_exists(folder_path):
