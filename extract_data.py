@@ -42,7 +42,7 @@ def open_x_xml(folder,x):
     print("Chargement termine")
     return streams
 
-def data_to_json(folder):
+def data_to_json(folder,transpose=False):
     '''Retourne la liste des dictionnaire'''
     D=[]
     for i,file in enumerate(os.listdir(folder)) :
@@ -50,6 +50,13 @@ def data_to_json(folder):
             s=music21.converter.parse(folder+"/"+file)
             dictionnary= score_to_dict(s)
             D.append(dictionnary)
+            if transpose :  
+                transposed_score = s.transpose(-12)
+                dictionnary= score_to_dict(transposed_score,transpose=" "+str(-1))
+                D.append(dictionnary)
+                transposed_score = s.transpose(12)
+                dictionnary= score_to_dict(transposed_score,transpose=" "+str(+1))
+                D.append(dictionnary)
     return D
 
 def json_into_x_melody(folder,x):
@@ -105,7 +112,7 @@ def get_measure_indices_for_rehearsal_marks(score):
 def get_time_signature(score):
     '''Retourne la signature du temps de la partition en str sinon une str vide'''
     time_signature = None
-    for element in score.flat:
+    for element in score.flatten():
         if isinstance(element, meter.TimeSignature):
             time_signature = element
             break
@@ -118,7 +125,7 @@ def get_time_signature(score):
 def get_keys(score):
     '''Retourne la liste des clés de la partition'''
     keys=[]
-    for element in score.flat:
+    for element in score.flatten():
         if isinstance(element, key.KeySignature):
             keys.append(element)
     return keys
@@ -161,7 +168,7 @@ def extract_chord_symbols(score):
             ds=[] #durees globales
             chords=[]
             
-            for element in measure.flat:
+            for element in measure.flatten():
                 if isinstance(element,harmony.ChordSymbol):
                     chords.append(element.figure)
                     if d!=[]:
@@ -190,7 +197,7 @@ def get_marks_repeat(score):
     for part in score.parts:
         m = 0 
         for measure in part.getElementsByClass(stream.Measure):
-            for element in measure.flat:
+            for element in measure.flatten():
                 if isinstance(element,music21.repeat.Segno):
                     segno_mark.append(measure.number)
                 if isinstance(element,music21.repeat.Coda):
@@ -221,7 +228,7 @@ def extract_expression(score):
             d=[] #duree locale
             exp=[] #expressions de la mesure
             ds=[] #durees globales
-            for element in measure.flat:
+            for element in measure.flatten():
                 if isinstance(element,expressions.TextExpression):
                     e.append(element.content)
                     if d!=[]:
@@ -291,7 +298,7 @@ def show_stat(score):
             
         print('-----')
 
-def score_to_dict(score):
+def score_to_dict(score,transpose=""):
     D=dict()
     nb_measures= get_number_of_measures(score)
     chord_symbols = extract_chord_symbols(score)
@@ -304,7 +311,7 @@ def score_to_dict(score):
     t=get_time_signature(score)
     starts= [ i for m,i in rehearsal_mark_indices] +[nb_measures+1]
     segments_end = [ s[0][1] for s in repeat_mark.values()]
-    D['title']=score.metadata.title
+    D['title']=score.metadata.title+transpose
     D['time_signature']=t
     seg_i=0
     for mark,(_,i) in enumerate(rehearsal_mark_indices):
