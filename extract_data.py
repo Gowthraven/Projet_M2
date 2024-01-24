@@ -321,9 +321,9 @@ def score_to_dict(score,transpose=""):
         D[MARKS[mark]]["key"]= str(keys[mark]) if mark< len(keys) else str(keys[0])
         while j < starts[mark+1]:
             D[MARKS[mark]][m_i]=dict()
-            D[MARKS[mark]][m_i]["Notes"] = note_symbols[i] if i in note_symbols else []
-            D[MARKS[mark]][m_i]["Expressions"] = exp_symbols[i] if i in exp_symbols else []
-            D[MARKS[mark]][m_i]["Accords"] = chord_symbols[i] if i in chord_symbols else []
+            D[MARKS[mark]][m_i]["Notes"] = note_symbols[j] if j in note_symbols else []
+            D[MARKS[mark]][m_i]["Expressions"] = exp_symbols[j] if j in exp_symbols else []
+            D[MARKS[mark]][m_i]["Accords"] = chord_symbols[j] if j in chord_symbols else []
             m_i+=1
             j+=1
             if seg_i < len(segments_end): # il y a toujours des segments
