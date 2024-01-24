@@ -1,5 +1,7 @@
 from music21 import stream, meter, key, note, metadata, expressions
 import music21
+import json
+import os
 
 def visualize(time_signature,keys,melodies,compare=0):
     score = stream.Score()
@@ -20,7 +22,9 @@ def visualize(time_signature,keys,melodies,compare=0):
             name=f"Melody {i+1}"
         measure.append(expressions.RehearsalMark(name))
         keysplit=keys[i].split(" ")
-        if len(keysplit)==2:
+        if keys[i]=="<music21.key.KeySignature of no sharps or flats>" :
+            measure.append(key.KeySignature(0))
+        elif len(keysplit)==2:
             measure.append(key.Key(keysplit[0],keysplit[1]))
         else:
             measure.append(key.Key(keys[i]))
