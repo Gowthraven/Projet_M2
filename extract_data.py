@@ -176,7 +176,7 @@ def extract_chord_symbols(score):
                         ds.append(sum(d))
                     d=[]
                 # chord expression
-                elif isinstance(element,expressions.TextExpression):
+                elif isinstance(element,expressions.TextExpression) and len(element.content)<8 : #verif  accord
                     chords.append(element.content)
                     if d!=[]:
                         ds.append(sum(d))
