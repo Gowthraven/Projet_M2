@@ -175,12 +175,14 @@ def extract_chord_symbols(score):
                     if d!=[]:
                         ds.append(sum(d))
                     d=[]
+                '''
                 # chord expression
                 elif isinstance(element,expressions.TextExpression) and len(element.content)<8 : #verif  accord
                     chords.append(element.content)
                     if d!=[]:
                         ds.append(sum(d))
                     d=[]
+                '''
 
                 if isinstance(element,music21.note.Note) : #l'expression locale est terminee
                     d.append(float(element.duration.quarterLength))
