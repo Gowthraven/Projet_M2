@@ -169,11 +169,19 @@ def extract_chord_symbols(score):
             chords=[]
             
             for element in measure.flatten():
+                #harmony.Chord
                 if isinstance(element,harmony.ChordSymbol):
                     chords.append(element.figure)
                     if d!=[]:
                         ds.append(sum(d))
                     d=[]
+                # chord expression
+                elif isinstance(element,expressions.TextExpression):
+                    chords.append(element.content)
+                    if d!=[]:
+                        ds.append(sum(d))
+                    d=[]
+
                 if isinstance(element,music21.note.Note) : #l'expression locale est terminee
                     d.append(float(element.duration.quarterLength))
                     
@@ -303,26 +311,24 @@ def score_to_dict(score,transpose=""):
     nb_measures= get_number_of_measures(score)
     chord_symbols = extract_chord_symbols(score)
     note_symbols=extract_notes(score)
-    exp_symbols= extract_expression(score)
     rehearsal_mark_indices = get_measure_indices_for_rehearsal_marks(score)
     repeat_mark=get_repeat(score)
     marks=get_marks_repeat(score)
     keys=get_keys(score)
     t=get_time_signature(score)
     starts= [ i for m,i in rehearsal_mark_indices] +[nb_measures+1]
-    segments_end = [ s[0][1] for s in repeat_mark.values()]
+    segments_end = [ s[0][1] for s in repeat_mark.values()] # parties qui finie par un segment 
     D['title']=score.metadata.title+transpose
     D['time_signature']=t
     seg_i=0
     for mark,(_,i) in enumerate(rehearsal_mark_indices):
         D[MARKS[mark]]= dict()
-        j= i #start
-        m_i=1
-        D[MARKS[mark]]["key"]= str(keys[mark]) if mark< len(keys) else str(keys[0])
-        while j < starts[mark+1]:
+        j= i #on commence la partie
+        m_i=1 #i_mesure locale
+        D[MARKS[mark]]["key"]= str(keys[mark]) if mark< len(keys) else str(keys[0]) #si changement de clé sinon on garde la meme
+        while j < starts[mark+1]: #tant qu'on est pas dans la partie suivante
             D[MARKS[mark]][m_i]=dict()
             D[MARKS[mark]][m_i]["Notes"] = note_symbols[j] if j in note_symbols else []
-            D[MARKS[mark]][m_i]["Expressions"] = exp_symbols[j] if j in exp_symbols else []
             D[MARKS[mark]][m_i]["Accords"] = chord_symbols[j] if j in chord_symbols else []
             m_i+=1
             j+=1
