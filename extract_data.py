@@ -306,6 +306,27 @@ def show_stat(score):
             
         print('-----')
 
+def sync_segment_parts(list_segments, list_parts):
+    '''Retourne un dictionnaire { numero partie : derniere mesure termine termine sur segment sinon None}'''
+    sync= {i : None for i in range(len(list_parts))}    
+    n=len(list_segments)
+    # pas de segments
+    if n==0:
+        return sync
+    i_part=1
+    i_seg=0
+    while i_part < len(list_parts) and i_seg!=len(list_segments):
+        if list_parts[i_part-1][1]<list_segments[i_seg] < list_parts[i_part][1]:
+            sync[i_part-1]=i_seg
+            i_seg+=1
+            i_part+=1
+        else:
+            i_part+=1
+
+    if i_seg!=len(list_segments): #on ajoute le dernier segment
+        sync[len(list_parts)-1]= len(list_segments)-1 if list_segments[-1]>list_parts[-1][1] else None
+    return sync
+
 def score_to_dict(score,transpose=""):
     D=dict()
     nb_measures= get_number_of_measures(score)
@@ -316,26 +337,51 @@ def score_to_dict(score,transpose=""):
     marks=get_marks_repeat(score)
     keys=get_keys(score)
     t=get_time_signature(score)
-    starts= [ i for m,i in rehearsal_mark_indices] +[nb_measures+1]
-    segments_end = [ s[0][1] for s in repeat_mark.values()] # parties qui finie par un segment 
+
+    segments_end = [ s[0][1] for s in repeat_mark.values()] #premier segment de chaque repetition
+    starts= [ i for m,i in rehearsal_mark_indices]
+    if  "Ainda me Recordo" in score.metadata.title+transpose: #cas particulier de data fixed
+        segments_end=[38,75]
+
+    if len(rehearsal_mark_indices)==len(segments_end): #on stopppe la partie quand on atteint le segment
+        ends=segments_end
+        end=segments_end[-1]
+    else:
+        if 'Coda' in marks and len(marks['Coda'])>0:
+            end=marks['Coda'][-1]-1 
+        else:
+            end=nb_measures
+
+        segments_sync=sync_segment_parts(segments_end,rehearsal_mark_indices)
+        ends=[]
+        for i_part in range(len(rehearsal_mark_indices)):
+            if segments_sync[i_part] is not None:
+                ends.append(segments_end[segments_sync[i_part]]) #segment correspondant
+            else:
+                if i_part!= len(rehearsal_mark_indices)-1: # pas la derniere partie
+                    ends.append(rehearsal_mark_indices[i_part+1][1]-1) #on s'arrete avant la prochaine partie
+                else:
+                    ends.append(end) #la fin selon coda ou le nombre de mesure
+        
+    s= [ (s,e) for (i,s),e in zip(rehearsal_mark_indices,ends)]
+   
     D['title']=score.metadata.title+transpose
     D['time_signature']=t
     seg_i=0
+    #print(D['title'])
+    #print(s)
     for mark,(_,i) in enumerate(rehearsal_mark_indices):
         D[MARKS[mark]]= dict()
         j= i #on commence la partie
         m_i=1 #i_mesure locale
         D[MARKS[mark]]["key"]= str(keys[mark]) if mark< len(keys) else str(keys[0]) #si changement de clé sinon on garde la meme
-        while j < starts[mark+1]: #tant qu'on est pas dans la partie suivante
+        while j <= ends[mark]: #tant qu'on est pas dans la partie suivante
             D[MARKS[mark]][m_i]=dict()
             D[MARKS[mark]][m_i]["Notes"] = note_symbols[j] if j in note_symbols else []
             D[MARKS[mark]][m_i]["Accords"] = chord_symbols[j] if j in chord_symbols else []
             m_i+=1
             j+=1
-            if seg_i < len(segments_end): # il y a toujours des segments
-                if j-1== segments_end[seg_i] and segments_end[seg_i]<starts[mark+1]: #segment correspond a la partie
-                    seg_i+=1
-                    break
+            
     return D
 
 def extract_random_seq(jsonfile,lg):
