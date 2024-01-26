@@ -154,7 +154,7 @@ def show_all_generated(file_name):
     melodies = []
     keys = []
     for entry in generated_data:
-        melodies.append([entry["Generated"], entry["Original"]])
+        melodies.append([entry["Generated"]]) #, , entry["Original"]
         keys.append(entry["Key"])  # Clé sans encapsulation dans une liste
     
     score = visualize_for_all(time_signature, keys, melodies)
