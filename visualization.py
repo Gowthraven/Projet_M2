@@ -158,6 +158,6 @@ def show_all_generated(file_name):
         keys.append(entry["Key"])  # Clé sans encapsulation dans une liste
     
     score = visualize_for_all(time_signature, keys, melodies)
-    score.show()
+    return score 
 
 
