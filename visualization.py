@@ -29,7 +29,7 @@ def visualize(time_signature,keys,melodies,compare=0):
         else:
             measure.append(key.Key(keys[i]))
         measureTime=0.0
-        for n in melodies[i]:
+        for n in melodies[i].split(', '):
             splitted=n.split('-')
             if len(splitted)==2:
                 note,duration=splitted[0],float(splitted[1])
