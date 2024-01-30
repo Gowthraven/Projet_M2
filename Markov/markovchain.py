@@ -1,5 +1,6 @@
 import numpy as np
 from music21 import metadata, note, stream
+import json
 
 
 class MarkovChainMelodyGenerator:
@@ -20,9 +21,6 @@ class MarkovChainMelodyGenerator:
         self.initial_probabilities = np.zeros(len(self.states))
         self.transition_matrix = np.zeros((len(self.states), len(self.states)))
         self._state_indexes = {state: i for (i, state) in enumerate(self.states)}
-
-        
-
 
     def train(self, training_data):
         """
@@ -160,7 +158,7 @@ class MarkovChainMelodyGenerator:
         return self.transition_matrix[self._state_indexes[state]].sum() > 0
 
 def extract_states(training_data):
-    states=[]
+    states=set()
     for melody in training_data:
         melody=melody.split(", ")
         for note_duration in melody:
@@ -170,9 +168,9 @@ def extract_states(training_data):
             else:
                 note_name="-".join( substring for substring in splitted[:-1])
             duration=float(splitted[-1])
-            states.append((note_name, duration))
+            states.add((note_name, duration))
 
-    return list(set(states))
+    return list(states)
 
 def generated_to_string(generated_melody):
     melody=generated_melody[0][0]+"-"+str(generated_melody[0][1])
@@ -180,3 +178,11 @@ def generated_to_string(generated_melody):
         melody+=", "+note_duration[0]+"-"+str(note_duration[1])
 
     return melody
+
+def generated_to_json(title,generated_melodies,key="F",part="All"):
+    for melody in generated_melodies:
+        for i in range(len(melody)):
+            melody[i]=melody[i][0]+"-"+str(melody[i][1])
+    generated = [ {'Title' : f"Markov {i+1}" , 'Part': part, 'Key' : key , 'Generated' : melody} for i, melody in enumerate(generated_melodies) ]
+    with open(f"Generated/{title}.json","w") as f:
+        json.dump(generated,f,indent=2)
