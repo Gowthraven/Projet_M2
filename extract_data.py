@@ -66,7 +66,7 @@ def json_into_x_melody(folder,x):
         print(f"The file '{file_path}' does not exist.  Exiting program.")
         return []
 
-    with open(folder+"/"+'data.json','r') as file: #le fichier crée par extract_data.py
+    with open(file_path,'r') as file: #le fichier crée par extract_data.py
         data= json.load(file)
 
     dataset = []    
@@ -94,6 +94,37 @@ def json_into_x_melody(folder,x):
     with open('Data/dataset.json','w') as file:
         json.dump(dataset,file) 
     return len(dataset)
+
+def json_into_part_melody(file_path):
+    '''Enregistre la liste des x premieres melodies de data.json'''
+    if not(os.path.exists(file_path) and os.path.isfile(file_path)):
+        print(f"The file '{file_path}' does not exist.  Exiting program.")
+        return []
+
+    with open(file_path,'r') as file: #le fichier crée par extract_data.py
+        data= json.load(file)
+
+    dataset={"A":[],"B":[],"C":[]}
+    for P in data:
+        parts=[]
+        #derterminer les parties de la partition
+        for name_part in MARKS[:-1]:
+            if name_part in P:
+                parts.append(name_part)
+        #chaque melodie
+        for part in parts:
+            all_notes=""
+            #chaque mesure
+            for k in P[part].keys():
+                if k!='key':
+                    notes=P[part][k]['Notes']
+                    for note in notes:
+                        all_notes+=note[0]+"-"+QUARTER_DURATION[note[1]]+', '
+            if len(all_notes)!=0:
+                dataset[part].append(all_notes[:-2])
+    for key,value in dataset.items():
+        with open(f'Data/dataset{key}.json','w') as file:
+            json.dump(value,file)
             
 
 def get_measure_indices_for_rehearsal_marks(score):
