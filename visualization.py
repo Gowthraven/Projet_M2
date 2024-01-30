@@ -3,7 +3,7 @@ import music21
 import json
 import os
 
-def visualize(time_signature,keys,melodies,compare=0):
+def visualize(time_signature,keys,melodies,compare=0,tempo=120):
     score = stream.Score()
     score.metadata = metadata.Metadata(title="Melodies generated")
     N=len(keys)
@@ -29,22 +29,40 @@ def visualize(time_signature,keys,melodies,compare=0):
         else:
             measure.append(key.Key(keys[i]))
         measureTime=0.0
+        measure.append(music21.tempo.MetronomeMark(number=tempo))
         for n in melodies[i].split(', '):
-            splitted=n.split('-')
+            if measureTime==measureDuration: #si la mesure est finie on l'ajoute
+                part.append(measure)
+                measureTime=0.0
+                measure=stream.Measure(measureCount)
+                measureCount+=1
+            splitted=n.split('-') #recuperation note duration
             if len(splitted)==2:
                 note,duration=splitted[0],float(splitted[1])
             else:
                 note = "-".join( substring for substring in splitted[:-1])
                 duration=float(splitted[-1])
-            if measureTime+duration>measureDuration:
-                if measureTime!=measureDuration:
-                    measure.append(music21.note.Rest(quarterLength=measureDuration-(measureTime))) 
+
+            if measureTime+duration>measureDuration: #La note dépase la mesure, on coupe
+                if note=="rest":
+                    measure.append(music21.note.Rest(quarterLength=measureDuration-(measureTime)))
+                else:
+                    measure.append(music21.note.Note(note,quarterLength=measureDuration-(measureTime))) 
                 part.append(measure)
                 measure=stream.Measure(measureCount)
                 measureCount+=1
-                measureTime=0.0
-            measureTime+=duration
-            measure.append(music21.note.Note(note,quarterLength=duration))
+                if note=="rest":
+                    measure.append(music21.note.Rest(quarterLength=duration-(measureDuration-(measureTime))))
+                else:
+                    measure.append(music21.note.Note(note,quarterLength=duration-(measureDuration-(measureTime))))
+                measureTime=duration-(measureDuration-(measureTime))
+            else:
+                measureTime+=duration
+                if note=="rest":
+                    measure.append(music21.note.Rest(quarterLength=duration))
+                else:
+                    measure.append(music21.note.Note(note,quarterLength=duration))
+            
         if measureTime!=measureDuration:
             measure.append(music21.note.Rest(quarterLength=measureDuration-(measureTime))) 
         part.append(measure)
@@ -81,7 +99,7 @@ def compare_generated(i, file_name='generated.json'):
 
 
 
-def visualize_for_all(time_signature, keys, melodies, compare=0):
+def visualize_for_all(time_signature, keys, melodies, compare=0,tempo=120):
     #Version légerment modifié de visualize pour l'affichage de toutes les mélodies générées
     score = stream.Score()
     score.metadata = metadata.Metadata(title="Melodies generated")
@@ -89,8 +107,8 @@ def visualize_for_all(time_signature, keys, melodies, compare=0):
     part = stream.Part()
     part.append(meter.TimeSignature(time_signature))
     measure = stream.Measure(0)
-    measure_duration = float(time_signature.split('/')[0])
-    measure_count = 1
+    measureDuration = float(time_signature.split('/')[0])
+    measureCount = 1
     for i in range(N):
         if compare != 0:
             if i % 2 == 0:
@@ -107,35 +125,52 @@ def visualize_for_all(time_signature, keys, melodies, compare=0):
             measure.append(key.Key(keysplit[0], keysplit[1]))
         else:
             measure.append(key.Key(keys[i]))
-        measure_time = 0.0
-        for melody in melodies[i]:
-            for n in melody:
-                splitted = n.split('-')
-                if len(splitted) == 2:
-                    note, duration = splitted[0], float(splitted[1])
+        measureTime = 0.0
+        measure.append(music21.tempo.MetronomeMark(number=tempo))
+        for n in melodies[i]:
+            if measureTime==measureDuration: #si la mesure est finie on l'ajoute
+                part.append(measure)
+                measureTime=0.0
+                measure=stream.Measure(measureCount)
+                measureCount+=1
+            splitted=n.split('-') #recuperation note duration
+            if len(splitted)==2:
+                note,duration=splitted[0],float(splitted[1])
+            else:
+                note = "-".join( substring for substring in splitted[:-1])
+                duration=float(splitted[-1])
+
+            if measureTime+duration>measureDuration: #La note dépase la mesure, on coupe
+                if note=="rest":
+                    measure.append(music21.note.Rest(quarterLength=measureDuration-(measureTime)))
                 else:
-                    note = "-".join(substring for substring in splitted[:-1])
-                    duration = float(splitted[-1])
-                if measure_time + duration > measure_duration:
-                    if measure_time != measure_duration:
-                        measure.append(music21.note.Rest(quarterLength=measure_duration - (measure_time)))
-                    part.append(measure)
-                    measure = stream.Measure(measure_count)
-                    measure_count += 1
-                    measure_time = 0.0
-                measure_time += duration
-                measure.append(music21.note.Note(note, quarterLength=duration))
-        if measure_time != measure_duration:
-            measure.append(music21.note.Rest(quarterLength=measure_duration - (measure_time)))
+                    measure.append(music21.note.Note(note,quarterLength=measureDuration-(measureTime))) 
+                part.append(measure)
+                measure=stream.Measure(measureCount)
+                measureCount+=1
+                if note=="rest":
+                    measure.append(music21.note.Rest(quarterLength=duration-(measureDuration-(measureTime))))
+                else:
+                    measure.append(music21.note.Note(note,quarterLength=duration-(measureDuration-(measureTime))))
+                measureTime=duration-(measureDuration-(measureTime))
+            else:
+                measureTime+=duration
+                if note=="rest":
+                    measure.append(music21.note.Rest(quarterLength=duration))
+                else:
+                    measure.append(music21.note.Note(note,quarterLength=duration))
+            
+        if measureTime != measureDuration:
+            measure.append(music21.note.Rest(quarterLength=measureDuration - (measureTime)))
         part.append(measure)
-        measure_time = 0.0
+        measureTime = 0.0
         for _ in range(5):
-            measure = stream.Measure(measure_count)
-            measure_count += 1
-            measure.append(music21.note.Rest(quarterLength=measure_duration))
+            measure = stream.Measure(measureCount)
+            measureCount += 1
+            measure.append(music21.note.Rest(quarterLength=measureDuration))
             part.append(measure)
-        measure = stream.Measure(measure_count)
-        measure_count += 1
+        measure = stream.Measure(measureCount)
+        measureCount += 1
 
     score.append(part)
         
@@ -154,7 +189,7 @@ def show_all_generated(file_name):
     melodies = []
     keys = []
     for entry in generated_data:
-        melodies.append([entry["Generated"]]) #, , entry["Original"]
+        melodies.append(entry["Generated"]) 
         keys.append(entry["Key"])  # Clé sans encapsulation dans une liste
     
     score = visualize_for_all(time_signature, keys, melodies)

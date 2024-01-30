@@ -6,7 +6,7 @@ import random
 from music21 import *
 
 MARKS=['A','B','C','D']
-QUARTER_DURATION= { '64th' : '0.0625' , '32nd': '0.125', '16th' : '0.25' , 'eighth' : '0.5' ,'quarter' : '1.0' ,'half' : '2.0'}
+QUARTER_DURATION= { '64th' : '0.0625' , '32nd': '0.125', '16th' : '0.25' , 'eighth' : '0.5' ,'quarter' : '1.0' ,'half' : '2.0','whole' : '2.0'}
 
 
 def check_folder_exists(folder_path):
@@ -71,6 +71,7 @@ def json_into_x_melody(folder,x):
 
     dataset = []    
     for P in data:
+        #print(P["title"])
         parts=[]
         #derterminer les parties de la partition
         for name_part in MARKS:
@@ -96,7 +97,7 @@ def json_into_x_melody(folder,x):
     return len(dataset)
 
 def json_into_part_melody(file_path):
-    '''Enregistre la liste des x premieres melodies de data.json'''
+    '''Enregistre la liste des parties A, B et C de toutes les melodies de data.json'''
     if not(os.path.exists(file_path) and os.path.isfile(file_path)):
         print(f"The file '{file_path}' does not exist.  Exiting program.")
         return []
@@ -125,6 +126,7 @@ def json_into_part_melody(file_path):
     for key,value in dataset.items():
         with open(f'Data/dataset{key}.json','w') as file:
             json.dump(value,file)
+    return len(dataset["A"]),len(dataset["B"]),len(dataset["C"])
             
 
 def get_measure_indices_for_rehearsal_marks(score):
@@ -182,9 +184,15 @@ def extract_notes(score):
         m = 0
         for measure in part.getElementsByClass(stream.Measure):
             m += 1
-            notes = measure.getElementsByClass(music21.note.Note)
-            if notes:
-                notes_dic[m] = [ (n.nameWithOctave, n.duration.type) for n in notes]
+            notes_and_rests = []
+            for element in measure:
+                if isinstance(element,music21.note.Note):
+                    notes_and_rests.append((element.nameWithOctave, element.duration.type))
+                if isinstance(element,music21.note.Rest):
+                    if element.duration.type!='complex':
+                        notes_and_rests.append((element.name,element.duration.type))
+            if notes_and_rests:
+                notes_dic[m] = notes_and_rests
 
     return notes_dic
 
@@ -493,6 +501,9 @@ if __name__ == "__main__":
         if score_name =="melodies":
             n=json_into_x_melody("data/",-1)
             print(f"Toutes les melodies ({n}) ont étés générées.")
+        elif score_name=="melodiesparts":
+            a,b,c=json_into_part_melody("data/data.json")
+            print(f"Toutes les melodies ont étés générées par parties. Tailles des parties : A : {a} B : {b} C : {c}")
         else:
             s=open_one_xml(path,score_name)
             show_stat(s)
