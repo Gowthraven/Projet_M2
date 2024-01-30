@@ -458,8 +458,8 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         score_name=sys.argv[1]
         if score_name =="melodies":
-            json_into_x_melody("data/",-1)
-            print("Toutes les melodies ont étés générées.")
+            n=json_into_x_melody("data/",-1)
+            print(f"Toutes les melodies ({n}) ont étés générées.")
         else:
             s=open_one_xml(path,score_name)
             show_stat(s)
