@@ -337,6 +337,7 @@ def score_to_dict(score,transpose=""):
     rehearsal_mark_indices = get_measure_indices_for_rehearsal_marks(score)
     repeat_mark=get_repeat(score)
     marks=get_marks_repeat(score)
+    exp=extract_expression(score)
     keys=get_keys(score)
     t=get_time_signature(score)
 
@@ -381,6 +382,7 @@ def score_to_dict(score,transpose=""):
             D[MARKS[mark]][m_i]=dict()
             D[MARKS[mark]][m_i]["Notes"] = note_symbols[j] if j in note_symbols else []
             D[MARKS[mark]][m_i]["Accords"] = chord_symbols[j] if j in chord_symbols else []
+            D[MARKS[mark]][m_i]["Expressions"] = exp[j] if j in exp else []
             m_i+=1
             j+=1
             
