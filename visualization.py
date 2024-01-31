@@ -1,4 +1,4 @@
-from music21 import stream, meter, key, note, metadata, expressions
+from music21 import stream, meter, key, note, metadata, expressions, tie
 import music21
 import json
 import os
@@ -36,6 +36,7 @@ def visualize(time_signature,keys,melodies,compare=0,tempo=120):
                 measureTime=0.0
                 measure=stream.Measure(measureCount)
                 measureCount+=1
+
             splitted=n.split('-') #recuperation note duration
             if len(splitted)==2:
                 note,duration=splitted[0],float(splitted[1])
@@ -47,7 +48,9 @@ def visualize(time_signature,keys,melodies,compare=0,tempo=120):
                 if note=="rest":
                     measure.append(music21.note.Rest(quarterLength=measureDuration-(measureTime)))
                 else:
-                    measure.append(music21.note.Note(note,quarterLength=measureDuration-(measureTime))) 
+                    note1=music21.note.Note(note,quarterLength=measureDuration-(measureTime))
+                    measure.append(note1) 
+                    note1.tie = tie.Tie()
                 part.append(measure)
                 measure=stream.Measure(measureCount)
                 measureCount+=1
@@ -144,7 +147,9 @@ def visualize_for_all(time_signature, keys, melodies, compare=0,tempo=120):
                 if note=="rest":
                     measure.append(music21.note.Rest(quarterLength=measureDuration-(measureTime)))
                 else:
-                    measure.append(music21.note.Note(note,quarterLength=measureDuration-(measureTime))) 
+                    note1=music21.note.Note(note,quarterLength=measureDuration-(measureTime))
+                    measure.append(note1) 
+                    note1.tie = tie.Tie()
                 part.append(measure)
                 measure=stream.Measure(measureCount)
                 measureCount+=1

@@ -59,7 +59,7 @@ class MarkovChainMelodyGenerator:
         self._normalize_transition_matrix()
 
 
-    def generate(self, length):
+    def generate(self, length,starting_sequence=[]):
         """
         Generate a melody of a given length.
 
@@ -69,7 +69,10 @@ class MarkovChainMelodyGenerator:
         Returns:
             melody (list of tuples): A list of generated states.
         """
-        melody = [self._generate_starting_state()]
+        if starting_sequence==[]:
+            melody = [self._generate_starting_state()]
+        else:
+            melody = starting_sequence
         for _ in range(1, length):
             melody.append(self._generate_next_state(melody[-1]))
         return melody
