@@ -3,7 +3,7 @@ import music21
 import json
 import os
 
-def visualize(time_signature,keys,melodies,compare=0,tempo=120):
+def visualize(time_signature,keys,melodies,compare=0,tempo=80):
     score = stream.Score()
     score.metadata = metadata.Metadata(title="Melodies generated")
     N=len(keys)
@@ -99,7 +99,7 @@ def compare_generated(i, file_name='generated.json'):
 
 
 
-def visualize_for_all(time_signature, keys, melodies, compare=0,tempo=120):
+def visualize_for_all(time_signature, keys, melodies, compare=0,tempo=80):
     #Version légerment modifié de visualize pour l'affichage de toutes les mélodies générées
     score = stream.Score()
     score.metadata = metadata.Metadata(title="Melodies generated")
@@ -176,7 +176,7 @@ def visualize_for_all(time_signature, keys, melodies, compare=0,tempo=120):
         
     return score
 
-def show_all_generated(file_name):
+def show_all_generated(file_name,tempo):
     if not os.path.exists(file_name) or not os.path.isfile(file_name):
         print(f"The file '{file_name}' does not exist. Exiting program.")
         return
@@ -192,7 +192,7 @@ def show_all_generated(file_name):
         melodies.append(entry["Generated"]) 
         keys.append(entry["Key"])  # Clé sans encapsulation dans une liste
     
-    score = visualize_for_all(time_signature, keys, melodies)
+    score = visualize_for_all(time_signature, keys, melodies,tempo=tempo)
     return score 
 
 
