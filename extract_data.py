@@ -427,8 +427,8 @@ def score_to_dict(score,transpose=""):
             
     return D
 
-def extract_random_seq(jsonfile,lg):
-    '''Retourne (nom de la partition, nom de la partie, clé, et les lg premieres notes sous forme de string) d'une partie d'une partition au hasard'''
+def extract_random_seq(jsonfile,lg,part=None):
+    '''Retourne (nom de la partition, nom de la partie, clé, et les lg premieres notes sous forme de string) d'une partie d'une partition au hasard (option forcer une partie)'''
     if not(os.path.isfile(jsonfile)):
         print(f"The file '{jsonfile}' does not exist.  Exiting program.")
         return ()
@@ -440,13 +440,19 @@ def extract_random_seq(jsonfile,lg):
 
     while len(selected_notes) < lg: # au cas où il n'y aurait pas assez de notes dans la partie de la partition sélectionnée
 
-        # choix au hasard d'une partition
         selected_score = random.choice(data)
-
+        part_selected= part is None and part not in selected_score.keys() #on doit choisir la partie part et elle n'est pas dans la partition
+        while not part_selected:
+            selected_score = random.choice(data)
+            part_selected= part in selected_score.keys()
+            
         # choix au hasard d'une partie de cette partition
         parts = [key for key in selected_score.keys() if key in MARKS]
-        name_part = random.choice(parts)
+        name_part = random.choice(parts) if part is None else part
+        print(name_part)
         selected_part = selected_score[name_part]
+
+
 
         # conservation des lg premières notes
         all_notes = [item['Notes'] for measure, item in selected_part.items() if measure.isdigit()]
