@@ -87,9 +87,17 @@ class MelodyPreprocessor:
         )
         self._set_max_melody_length(tokenized_melodies)
         self._set_number_of_tokens()
+        
         input_sequences, target_sequences = self._create_sequence_pairs(
             tokenized_melodies
         )
+        
+        input_sequences2, target_sequences2 = self._create_sequence_pairs_with_sliding_windows(
+            tokenized_melodies
+        )
+        input_sequences=np.concatenate((input_sequences, input_sequences2))
+        target_sequences = np.concatenate((target_sequences, target_sequences2))
+        
         tf_training_dataset = self._convert_to_tf_dataset(
             input_sequences, target_sequences
         )
@@ -165,6 +173,31 @@ class MelodyPreprocessor:
                 padded_target_seq = self._pad_sequence(target_seq)
                 input_sequences.append(padded_input_seq)
                 target_sequences.append(padded_target_seq)
+            
+                
+        return np.array(input_sequences), np.array(target_sequences)
+    
+    def _create_sequence_pairs_with_sliding_windows(self, melodies, window_size=12):
+        """
+        Creates input-target pairs from tokenized melodies.
+
+            Parameters:
+                melodies (list): A list of tokenized melodies.
+                window_size (int): Size of the sliding window
+
+        Returns:
+                tuple: Two numpy arrays representing input sequences and target sequences.
+        """
+        input_sequences, target_sequences = [], []
+        for melody in melodies:
+            for i in range(0, len(melody) - window_size):
+                input_seq = melody[i : i + window_size - 1]
+                target_seq = melody[i + 1 : i + window_size]
+                padded_input_seq = self._pad_sequence(input_seq)
+                padded_target_seq = self._pad_sequence(target_seq)
+                input_sequences.append(padded_input_seq)
+                target_sequences.append(padded_target_seq)
+            
         return np.array(input_sequences), np.array(target_sequences)
 
     def _pad_sequence(self, sequence):
