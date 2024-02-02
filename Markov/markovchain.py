@@ -80,7 +80,7 @@ class MarkovChainMelodyGenerator:
                 melody.append(self._generate_next_state_clean(melody[-1],measureDuration-measureTime))
         ''' 
         if mode=="note":
-            for _ in range(len(melody), length):
+            for _ in range(len(melody), length-1):
                 melody.append(self._generate_next_state(melody[-1]))
         elif mode=="measure":
             measureDuration = float(time_signature.split('/')[0])
@@ -165,12 +165,14 @@ class MarkovChainMelodyGenerator:
         Returns:
             The next state in the Markov Chain.
         """
-        if self._does_state_have_subsequent(current_state):
-            index = np.random.choice(
-                list(self._state_indexes.values()),
-                p=self.transition_matrix[self._state_indexes[current_state]],
-            )
-            return self.states[index]
+        if current_state in self.states:
+            if self._does_state_have_subsequent(current_state):
+                index = np.random.choice(
+                    list(self._state_indexes.values()),
+                    p=self.transition_matrix[self._state_indexes[current_state]],
+                )
+                return self.states[index]
+            return self._generate_starting_state()
         return self._generate_starting_state()
 
     def _generate_next_state_clean(self, current_state,remaining_time):

@@ -70,15 +70,10 @@ def json_into_x_melody(folder,x):
         data= json.load(file)
 
     dataset = []    
+    #chaque partition
     for P in data:
-        #print(P["title"])
-        parts=[]
-        #derterminer les parties de la partition
-        for name_part in MARKS:
-            if name_part in P:
-                parts.append(name_part)
         #chaque melodie
-        for part in parts:
+        for part in P.keys()-("title","time_signature"):
             all_notes=[]
             #chaque mesure
             for k in P[part].keys():
@@ -97,7 +92,7 @@ def json_into_x_melody(folder,x):
     return len(dataset)
 
 def json_into_part_melody(file_path):
-    '''Enregistre la liste des parties A, B et C de toutes les melodies de data.json'''
+    '''Enregistre la liste de toutes les melodies de data.json par partie'''
     if not(os.path.exists(file_path) and os.path.isfile(file_path)):
         print(f"The file '{file_path}' does not exist.  Exiting program.")
         return []
@@ -105,15 +100,11 @@ def json_into_part_melody(file_path):
     with open(file_path,'r') as file: #le fichier crée par extract_data.py
         data= json.load(file)
 
-    dataset={"A":[],"B":[],"C":[]}
+    dataset={}
+    #chaque partition
     for P in data:
-        parts=[]
-        #derterminer les parties de la partition
-        for name_part in MARKS[:-1]:
-            if name_part in P:
-                parts.append(name_part)
         #chaque melodie
-        for part in parts:
+        for part in P.keys()-("title","time_signature"):
             all_notes=[]
             #chaque mesure
             for k in P[part].keys():
@@ -122,11 +113,13 @@ def json_into_part_melody(file_path):
                     for note in notes:
                         all_notes.append(note[0]+"-"+QUARTER_DURATION[note[1]])
             if len(all_notes)!=0:
+                if part not in dataset.keys():
+                    dataset[part]=[]
                 dataset[part].append(all_notes)
     for key,value in dataset.items():
         with open(f'Data/dataset{key}.json','w') as file:
             json.dump(value,file)
-    return len(dataset["A"]),len(dataset["B"]),len(dataset["C"])
+    return [(key,len(dataset[key])) for key in dataset.keys()]
             
 
 def get_measure_indices_for_rehearsal_marks(score):
@@ -412,16 +405,17 @@ def score_to_dict(score,transpose=""):
     seg_i=0
     #print(D['title'])
     #print(s)
-    for mark,(_,i) in enumerate(rehearsal_mark_indices):
-        D[MARKS[mark]]= dict()
+    for mark,(part_name,i) in enumerate(rehearsal_mark_indices):
+        part_name=part_name[36:-2]
+        D[part_name]= dict()
         j= i #on commence la partie
         m_i=1 #i_mesure locale
-        D[MARKS[mark]]["key"]= str(keys[mark]) if mark< len(keys) else str(keys[0]) #si changement de clé sinon on garde la meme
+        D[part_name]["key"]= str(keys[mark]) if mark< len(keys) else str(keys[0]) #si changement de clé sinon on garde la meme
         while j <= ends[mark]: #tant qu'on est pas dans la partie suivante
-            D[MARKS[mark]][m_i]=dict()
-            D[MARKS[mark]][m_i]["Notes"] = note_symbols[j] if j in note_symbols else []
-            D[MARKS[mark]][m_i]["Accords"] = chord_symbols[j] if j in chord_symbols else []
-            D[MARKS[mark]][m_i]["Expressions"] = exp[j] if j in exp else []
+            D[part_name][m_i]=dict()
+            D[part_name][m_i]["Notes"] = note_symbols[j] if j in note_symbols else []
+            D[part_name][m_i]["Accords"] = chord_symbols[j] if j in chord_symbols else []
+            D[part_name][m_i]["Expressions"] = exp[j] if j in exp else []
             m_i+=1
             j+=1
             
@@ -447,7 +441,7 @@ def extract_random_seq(jsonfile,lg,part=None):
             part_selected= part in selected_score.keys()
             
         # choix au hasard d'une partie de cette partition
-        parts = [key for key in selected_score.keys() if key in MARKS]
+        parts = [key for key in selected_score.keys()-("title","time_signature")]
         name_part = random.choice(parts) if part is None else part
         print(name_part)
         selected_part = selected_score[name_part]
@@ -508,8 +502,8 @@ if __name__ == "__main__":
             n=json_into_x_melody("data/",-1)
             print(f"Toutes les melodies ({n}) ont étés générées.")
         elif score_name=="melodiesparts":
-            a,b,c=json_into_part_melody("data/data.json")
-            print(f"Toutes les melodies ont étés générées par parties. Tailles des parties : A : {a} B : {b} C : {c}")
+            parts_len=json_into_part_melody("data/data.json")
+            print("Toutes les melodies ont étés générées par parties. Tailles des parties : "+" ".join([f"{key} : {length} " for key,length in parts_len]))
         else:
             s=open_one_xml(path,score_name)
             show_stat(s)
