@@ -30,51 +30,76 @@ class MarkovChainMelodyGenerator:
             notes (list): A list of music21.note.Note objects.
         """
         for melody in training_data:
-            
-            melody=melody.split(", ")
-            
-            splitted=melody[0].split('-')
-            if len(splitted)==2:
-                note_name=splitted[0]
-            else:
-                note_name="-".join( substring for substring in splitted[:-1])
-            duration=float(splitted[-1])
-            self.initial_probabilities[self._state_indexes[(note_name,duration)]]+=1
-            
-            previous_note=(note_name,duration)
+            self.initial_probabilities[self._state_indexes[melody[0]]]+=1
+            previous_note=(melody[0])
             
             for note_duration in melody[1:]:
-                
-                splitted=note_duration.split('-')
-                if len(splitted)==2:
-                    note_name=splitted[0]
-                else:
-                    note_name="-".join( substring for substring in splitted[:-1])
-                duration=float(splitted[-1])
-                
-                self.transition_matrix[self._state_indexes[previous_note],self._state_indexes[(note_name,duration)]]+=1
-                previous_note=(note_name,duration)
+                self.transition_matrix[self._state_indexes[previous_note],self._state_indexes[note_duration]]+=1
+                previous_note=(note_duration)
 
         self._normalize_initial_probabilities()
         self._normalize_transition_matrix()
 
 
-    def generate(self, length,starting_sequence=[]):
+    def generate(self, length,starting_sequence=[],mode="note",time_signature="2/4"): #,clean_measure=False
         """
-        Generate a melody of a given length.
+        Genere une melodie de la longueur voulue.
 
-        Parameters:
-            length (int): The length of the sequence to generate.
+        Parametres:
+            length (int): La longueur de la melodie en note ou measure selon mode.
+            starting_sequence (liste de tuple (string,float)) : Sequence de notes placees au debut de la melodie.
+            mode (string) : Permet de definir la longueur de la melodie en note ou en mesure. Doit valoir "note" ou "measure".
+            time_signature (string) : Choix de la signature rythmique. Doit etre de la forme "int/int"
 
-        Returns:
-            melody (list of tuples): A list of generated states.
+        Sortie:
+            melody (liste de tuples (string,float)): La liste d'etats generee.
         """
         if starting_sequence==[]:
             melody = [self._generate_starting_state()]
         else:
             melody = starting_sequence
-        for _ in range(1, length):
-            melody.append(self._generate_next_state(melody[-1]))
+        '''
+        if clean_measure:
+            measureDuration = float(time_signature.split('/')[0])
+            measureCount = 0
+            measureTime = 0.0
+            for note_duration in melody:
+                measureTime+=note_duration[1]
+                if measureTime==measureDuration:
+                    measureTime = 0.0
+                    measureCount+=1
+                elif measureTime>measureDuration:
+                    measureTime = measureTime-measureDuration
+                    measureCount+=1
+            for _ in range(length):
+                if measureTime==measureDuration:
+                    measureTime = 0.0
+                    measureCount+=1
+                
+                
+                melody.append(self._generate_next_state_clean(melody[-1],measureDuration-measureTime))
+        ''' 
+        if mode=="note":
+            for _ in range(len(melody), length):
+                melody.append(self._generate_next_state(melody[-1]))
+        elif mode=="measure":
+            measureDuration = float(time_signature.split('/')[0])
+            totalTime = 0.0
+            for note_duration in melody:
+                duration=float(note_duration.split("-")[-1])
+                totalTime+=duration
+            while totalTime<measureDuration*length:
+                next_state=self._generate_next_state(melody[-1])
+                melody.append(next_state)
+                totalTime+=float(next_state.split("-")[-1])
+            if totalTime>measureDuration*length:
+                last_state=melody[-1].split("-")
+                last_state="-".join(n for n in last_state[:-1])+"-"+str(float(last_state[-1])-(totalTime-(measureDuration*length)))
+                melody[-1]=last_state
+        else:
+            print("mode doit être égal à 'note' ou 'melody'")
+            return None
+
         return melody
 
     def _normalize_initial_probabilities(self):
@@ -148,6 +173,20 @@ class MarkovChainMelodyGenerator:
             return self.states[index]
         return self._generate_starting_state()
 
+    def _generate_next_state_clean(self, current_state,remaining_time):
+        p_next_state=self.transition_matrix[self._state_indexes[current_state]][:]
+        for next_state in self._state_indexes.keys():
+            if next_state[1]<remaining_time:
+                p_next_state[self._state_indexes[next_state]]=0
+        if p_next_state.sum() > 0:
+            index = np.random.choice(
+                list(self._state_indexes.values()),
+                p=p_next_state,
+            )
+            return self.states[index]
+        
+        return ("rest",remaining_time)
+
     def _does_state_have_subsequent(self, state):
         """
         Check if a given state has a subsequent state in the transition matrix.
@@ -163,29 +202,16 @@ class MarkovChainMelodyGenerator:
 def extract_states(training_data):
     states=set()
     for melody in training_data:
-        melody=melody.split(", ")
         for note_duration in melody:
-            splitted=note_duration.split('-')
-            if len(splitted)==2:
-                note_name=splitted[0]
-            else:
-                note_name="-".join( substring for substring in splitted[:-1])
-            duration=float(splitted[-1])
-            states.add((note_name, duration))
+            states.add(note_duration)
 
     return list(states)
 
-def generated_to_string(generated_melody):
-    melody=generated_melody[0][0]+"-"+str(generated_melody[0][1])
-    for note_duration in generated_melody[1:]:
-        melody+=", "+note_duration[0]+"-"+str(note_duration[1])
-
-    return melody
-
 def generated_to_json(title,generated_melodies,key="F",part="All"):
-    for melody in generated_melodies:
+    '''for melody in generated_melodies:
         for i in range(len(melody)):
-            melody[i]=melody[i][0]+"-"+str(melody[i][1])
+
+            melody[i]=(melody[i][0],melody[i][1])'''
     generated = [ {'Title' : f"Markov {i+1}" , 'Part': part, 'Key' : key , 'Generated' : melody} for i, melody in enumerate(generated_melodies) ]
     with open(f"Generated/{title}.json","w") as f:
         json.dump(generated,f,indent=2)

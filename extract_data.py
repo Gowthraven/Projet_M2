@@ -79,15 +79,15 @@ def json_into_x_melody(folder,x):
                 parts.append(name_part)
         #chaque melodie
         for part in parts:
-            all_notes=""
+            all_notes=[]
             #chaque mesure
             for k in P[part].keys():
                 if k!='key':
                     notes=P[part][k]['Notes']
                     for note in notes:
-                        all_notes+=note[0]+"-"+QUARTER_DURATION[note[1]]+', '
+                        all_notes.append(note[0]+"-"+QUARTER_DURATION[note[1]])
             if len(all_notes)!=0:
-                dataset.append(all_notes[:-2])
+                dataset.append(all_notes)
                 if len(dataset)==x:                #x melody
                     with open('Data/dataset.json','w') as file:
                         json.dump(dataset,file) 
@@ -114,15 +114,15 @@ def json_into_part_melody(file_path):
                 parts.append(name_part)
         #chaque melodie
         for part in parts:
-            all_notes=""
+            all_notes=[]
             #chaque mesure
             for k in P[part].keys():
                 if k!='key':
                     notes=P[part][k]['Notes']
                     for note in notes:
-                        all_notes+=note[0]+"-"+QUARTER_DURATION[note[1]]+', '
+                        all_notes.append(note[0]+"-"+QUARTER_DURATION[note[1]])
             if len(all_notes)!=0:
-                dataset[part].append(all_notes[:-2])
+                dataset[part].append(all_notes)
     for key,value in dataset.items():
         with open(f'Data/dataset{key}.json','w') as file:
             json.dump(value,file)
