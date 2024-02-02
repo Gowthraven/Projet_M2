@@ -59,7 +59,7 @@ def data_to_json(folder,transpose=False):
                 D.append(dictionnary)
     return D
 
-def json_into_melody(file_path,ouput_file="dataset",size=1000):
+def json_into_melody(file_path,output_file="dataset",size=1000):
     '''Enregistre la liste des x premieres melodies de data.json (taille melodie en mesure)'''
     if not(os.path.exists(file_path) and os.path.isfile(file_path)):
         print(f"The file '{file_path}' does not exist.  Exiting program.")
@@ -89,7 +89,7 @@ def json_into_melody(file_path,ouput_file="dataset",size=1000):
                 if melodie:
                     dataset.append(melodie)
         
-    with open('data/'+ouput_file+".json",'w') as file:
+    with open('data/'+output_file+".json",'w') as file:
         json.dump(dataset,file) 
     return len(dataset) 
 
