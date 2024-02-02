@@ -59,7 +59,7 @@ def data_to_json(folder,transpose=False):
                 D.append(dictionnary)
     return D
 
-def json_into_x_melody(file_path,size=1000):
+def json_into_melody(file_path,ouput_file="dataset",size=1000):
     '''Enregistre la liste des x premieres melodies de data.json (taille melodie en mesure)'''
     if not(os.path.exists(file_path) and os.path.isfile(file_path)):
         print(f"The file '{file_path}' does not exist.  Exiting program.")
@@ -89,11 +89,11 @@ def json_into_x_melody(file_path,size=1000):
                 if melodie:
                     dataset.append(melodie)
         
-    with open('data/dataset.json','w') as file:
+    with open('data/'+ouput_file+".json",'w') as file:
         json.dump(dataset,file) 
     return len(dataset) 
 
-def json_into_part_melody(file_path,size=1000):
+def json_into_part_melody(file_path,output_file="dataset",size=1000):
     '''Enregistre la liste de toutes les melodies de data.json par partie'''
     if not(os.path.exists(file_path) and os.path.isfile(file_path)):
         print(f"The file '{file_path}' does not exist.  Exiting program.")
@@ -127,7 +127,7 @@ def json_into_part_melody(file_path,size=1000):
         
                 
     for key,value in dataset.items():
-        with open(f'Data/dataset{key}.json','w') as file:
+        with open(f'Data/{output_file}{key}.json','w') as file:
             json.dump(value,file)
     return [(key,len(dataset[key])) for key in dataset.keys()]
 
@@ -535,7 +535,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         score_name=sys.argv[1]
         if score_name =="melodies":
-            n=json_into_x_melody("data/data.json")
+            n=json_into_melody("data/data.json")
             print(f"Toutes les melodies ({n}) ont étés générées.")
         elif score_name=="melodiesparts":
             parts_len=json_into_part_melody("data/data.json")
