@@ -59,9 +59,8 @@ def data_to_json(folder,transpose=False):
                 D.append(dictionnary)
     return D
 
-def json_into_x_melody(folder,x):
-    '''Enregistre la liste des x premieres melodies de data.json'''
-    file_path=folder+'/'+'data.json'
+def json_into_x_melody(file_path,size=1000):
+    '''Enregistre la liste des x premieres melodies de data.json (taille melodie en mesure)'''
     if not(os.path.exists(file_path) and os.path.isfile(file_path)):
         print(f"The file '{file_path}' does not exist.  Exiting program.")
         return []
@@ -74,24 +73,27 @@ def json_into_x_melody(folder,x):
     for P in data:
         #chaque melodie
         for part in P.keys()-("title","time_signature"):
-            all_notes=[]
+            melodie=[]
+            nb_measures=len(P[part].keys())-1
             #chaque mesure
-            for k in P[part].keys():
-                if k!='key':
-                    notes=P[part][k]['Notes']
-                    for note in notes:
-                        all_notes.append(note[0]+"-"+str(QUARTER_DURATION[note[1]]*float(P["time_signature"].split("/")[0])))
-            if len(all_notes)!=0:
-                dataset.append(all_notes)
-                if len(dataset)==x:                #x melody
-                    with open('Data/dataset.json','w') as file:
-                        json.dump(dataset,file) 
-                    return len(dataset)
-    with open('Data/dataset.json','w') as file:
+            for k in range(1,nb_measures+1):
+                melodie.append(P[part][str(k)]["Melodie"])
+            if size< nb_measures:
+                melodies = [ melodie[i:i+size] for i in range(nb_measures-size) ] 
+                melodies = [ m for melo in melodies for m in melo]
+                for m in melodies:
+                    if m :
+                        dataset.append(m)
+            else:
+                melodie = [ m for melo in melodie for m in melo]
+                if melodie:
+                    dataset.append(melodie)
+        
+    with open('data/dataset.json','w') as file:
         json.dump(dataset,file) 
-    return len(dataset)
+    return len(dataset) 
 
-def json_into_part_melody(file_path):
+def json_into_part_melody(file_path,size=1000):
     '''Enregistre la liste de toutes les melodies de data.json par partie'''
     if not(os.path.exists(file_path) and os.path.isfile(file_path)):
         print(f"The file '{file_path}' does not exist.  Exiting program.")
@@ -105,22 +107,29 @@ def json_into_part_melody(file_path):
     for P in data:
         #chaque melodie
         for part in P.keys()-("title","time_signature"):
-            all_notes=[]
-            #chaque mesure
-            for k in P[part].keys():
-                if k!='key':
-                    notes=P[part][k]['Notes']
-                    for note in notes:
-                        all_notes.append(note[0]+"-"+str(QUARTER_DURATION[note[1]]*float(P["time_signature"].split("/")[0])))
-            if len(all_notes)!=0:
-                if part not in dataset.keys():
+            if part not in dataset.keys():
                     dataset[part]=[]
-                dataset[part].append(all_notes)
+            melodie=[]
+            nb_measures=len(P[part].keys())-1
+            #chaque mesure
+            for k in range(1,nb_measures+1):
+                melodie.append(P[part][str(k)]["Melodie"])
+            if size< nb_measures:
+                melodies = [ melodie[i:i+size] for i in range(nb_measures-size) ] 
+                melodies = [ m for melo in melodies for m in melo]
+                for m in melodies:
+                    if m :
+                        dataset[part].append(m)
+            else:
+                melodie = [ m for melo in melodie for m in melo]
+                if melodie:
+                    dataset[part].append(melodie)
+        
+                
     for key,value in dataset.items():
         with open(f'Data/dataset{key}.json','w') as file:
             json.dump(value,file)
     return [(key,len(dataset[key])) for key in dataset.keys()]
-            
 
 def get_measure_indices_for_rehearsal_marks(score):
     '''Retourne les numero de mesures pour lequels la partition possede des RehearsalMark'''
@@ -416,6 +425,7 @@ def score_to_dict(score,transpose=""):
             D[part_name][m_i]["Notes"] = note_symbols[j] if j in note_symbols else []
             D[part_name][m_i]["Accords"] = chord_symbols[j] if j in chord_symbols else []
             D[part_name][m_i]["Expressions"] = exp[j] if j in exp else []
+            D[part_name][m_i]["Melodie"] = [  str(note)+'-'+str(QUARTER_DURATION[d]*float(t.split("/")[0])) for note,d in D[part_name][m_i]["Notes"] ]
             m_i+=1
             j+=1
             
@@ -456,6 +466,32 @@ def extract_random_seq(jsonfile,lg,part=None):
     random_seq = [selected_score['title'],selected_score["time_signature"],name_part,selected_part['key'],selected_notes]
 
     return random_seq
+
+def data_to_json_incomplete(folder):
+    '''Retourne un data_to_json ou une mesure sur 2 est enlevee ( on ne garde que les melodies)'''
+    file_path=folder+'/'+'data.json'
+    if not(os.path.exists(file_path) and os.path.isfile(file_path)):
+        print(f"The file '{file_path}' does not exist.  Exiting program.")
+        return []
+
+    with open(file_path,'r') as file: #le fichier crée par extract_data.py
+        data= json.load(file)
+    all_D=[]
+    for i,D in enumerate(data):
+        new_D = {"title" :  D["title"] ,  "time_signature" : D["time_signature"] }
+        valid_check=True
+        for part in D.keys()-("title","time_signature"):
+            new_D[part]=dict()
+            if len(D[part].keys())>2:
+                for k in range(1,len(D[part].keys())):
+                    new_D[part][str(k)] = D[part][str(k)]["Melodie"] if k%2==1 else []
+                new_D[part]["key"]=D[part]["key"]
+            else:
+                valid_check=False
+        if valid_check:
+            all_D.append(new_D)
+           
+    return all_D
 
 def extract_seq_from(jsonfile,desired_score,desired_part):
     '''Retourne (nom de la partition, nom de la partie, clé, et les lg premieres notes sous forme de string) de la partie d'une partition données'''
@@ -499,7 +535,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         score_name=sys.argv[1]
         if score_name =="melodies":
-            n=json_into_x_melody("data/",-1)
+            n=json_into_x_melody("data/data.json")
             print(f"Toutes les melodies ({n}) ont étés générées.")
         elif score_name=="melodiesparts":
             parts_len=json_into_part_melody("data/data.json")
@@ -518,10 +554,7 @@ if __name__ == "__main__":
     elif len(sys.argv) == 3:
         x=int(sys.argv[1])
         y=sys.argv[2]
-        if y =="melodies":
-            n=json_into_x_melody("data/",x)
-            print(f'{n} melodies generated')
-        elif y == "random":
+        if y == "random":
             jsonfile = "data/data.json"
             seq= extract_random_seq(jsonfile,x)
             print(f'Random sequence of {x} notes generated {seq}.')
