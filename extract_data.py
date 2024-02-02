@@ -6,7 +6,7 @@ import random
 from music21 import *
 
 MARKS=['A','B','C','D']
-QUARTER_DURATION= { '64th' : '0.0625' , '32nd': '0.125', '16th' : '0.25' , 'eighth' : '0.5' ,'quarter' : '1.0' ,'half' : '2.0','whole' : '2.0'}
+QUARTER_DURATION= { '64th' : 0.03125 , '32nd': 0.0625, '16th' : 0.125 , 'eighth' : 0.25 ,'quarter' : 0.5 ,'half' : 1,'whole' : 1}
 
 
 def check_folder_exists(folder_path):
@@ -80,7 +80,7 @@ def json_into_x_melody(folder,x):
                 if k!='key':
                     notes=P[part][k]['Notes']
                     for note in notes:
-                        all_notes.append(note[0]+"-"+QUARTER_DURATION[note[1]])
+                        all_notes.append(note[0]+"-"+str(QUARTER_DURATION[note[1]]*float(P["time_signature"].split("/")[0])))
             if len(all_notes)!=0:
                 dataset.append(all_notes)
                 if len(dataset)==x:                #x melody
@@ -111,7 +111,7 @@ def json_into_part_melody(file_path):
                 if k!='key':
                     notes=P[part][k]['Notes']
                     for note in notes:
-                        all_notes.append(note[0]+"-"+QUARTER_DURATION[note[1]])
+                        all_notes.append(note[0]+"-"+str(QUARTER_DURATION[note[1]]*float(P["time_signature"].split("/")[0])))
             if len(all_notes)!=0:
                 if part not in dataset.keys():
                     dataset[part]=[]
@@ -451,9 +451,9 @@ def extract_random_seq(jsonfile,lg,part=None):
         # conservation des lg premières notes
         all_notes = [item['Notes'] for measure, item in selected_part.items() if measure.isdigit()]
         selected_notes = [item for sublist in all_notes for item in sublist][:lg]
-        selected_notes= [str(n)+"-"+str(QUARTER_DURATION[d]) for n,d in selected_notes]
+        selected_notes= [str(n)+"-"+str(QUARTER_DURATION[d]*float(selected_score["time_signature"].split("/")[0])) for n,d in selected_notes]
 
-    random_seq = [selected_score['title'],name_part,selected_part['key'],selected_notes]
+    random_seq = [selected_score['title'],selected_score["time_signature"],name_part,selected_part['key'],selected_notes]
 
     return random_seq
 
@@ -482,7 +482,7 @@ def extract_seq_from(jsonfile,desired_score,desired_part):
         if part == desired_part:
             selected_part = selected_score[part]
             all_notes = [item['Notes'] for measure, item in selected_part.items() if measure.isdigit()]
-            all_notes= [str(n)+"-"+str(QUARTER_DURATION[d]) for notes in all_notes for n,d in notes]
+            all_notes= [str(n)+"-"+str(QUARTER_DURATION[d]*float(selected_score["time_signature"].split("/")[0])) for notes in all_notes for n,d in notes]
             break
 
     if selected_part == None:
