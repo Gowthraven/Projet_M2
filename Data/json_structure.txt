@@ -1,0 +1,24 @@
+[
+    [
+  {
+    "title": "",
+    "time_signature": "",
+    "A": {
+      "key": "F major",
+      "1": {
+        "Notes": [[ "E6","16th"] ,...],
+       
+     
+        "Expressions": [["Gm6",1.5],...],
+        
+        "Accords": []
+      },
+      "2": {
+        "Notes": [[ "E6","16th"] ,...],
+       
+     
+        "Expressions": [["Gm6",1.5],...],
+        
+        "Accords": []
+      } 
+    ]
