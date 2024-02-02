@@ -81,7 +81,7 @@ class MelodyPreprocessor:
                 pairs suitable for training a sequence-to-sequence model.
         """
         dataset = self._load_dataset()
-        parsed_melodies = [self._parse_melody(melody) for melody in dataset]
+        parsed_melodies = [melody for melody in dataset]
         tokenized_melodies = self._tokenize_and_encode_melodies(
             parsed_melodies
         )
