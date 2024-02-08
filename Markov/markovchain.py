@@ -5,43 +5,46 @@ import json
 
 class MarkovChainMelodyGenerator:
     """
-    Represents a Markov Chain model for melody generation.
+    Représente un modèle de chaîne de Markov pour la génération de mélodies.
     """
 
     def __init__(self, states):
         """
-        Initialize the MarkovChain with a list of states.
+        Initialiser la chaîne de Markov avec une liste d'états.
 
-        Parameters:
-            states (list of tuples): A list of possible (pitch, duration)
-                pairs.
+        Parametres:
+            states (liste de string): une liste de string unique de la forme "note-duree" qui represente chaque etat.
         """
 
-        self.states = states
+        self.states = states+["end"]
         self.initial_probabilities = np.zeros(len(self.states))
-        self.transition_matrix = np.zeros((len(self.states), len(self.states)))
+        self.transition_matrix = np.zeros((len(self.states)+1, len(self.states)))
         self._state_indexes = {state: i for (i, state) in enumerate(self.states)}
 
-    def train(self, training_data):
+    def train(self, training_data,end_transition=False):
         """
-        Train the model based on a list of notes.
+        Entraine le modèle sur des melodies.
 
         Parameters:
-            notes (list): A list of music21.note.Note objects.
+            training_data (liste de liste de string): Une liste de melodie qui sont elle même sous forme de liste de string "note-duree".
+            end_transition (bool) : Si il vaut True alors le modele prend en compte la transition vers l'etat "fin" qui interromp la generation.
         """
         for melody in training_data:
             self.initial_probabilities[self._state_indexes[melody[0]]]+=1
-            previous_note=(melody[0])
+            previous_state=(melody[0])
             
-            for note_duration in melody[1:]:
-                self.transition_matrix[self._state_indexes[previous_note],self._state_indexes[note_duration]]+=1
-                previous_note=(note_duration)
+            for next_state in melody[1:]:
+                self.transition_matrix[self._state_indexes[previous_state],self._state_indexes[next_state]]+=1
+                previous_state=(next_state)
+
+            if end_transition:    
+                self.transition_matrix[self._state_indexes[melody[-1]],-1]+=1
 
         self._normalize_initial_probabilities()
         self._normalize_transition_matrix()
 
 
-    def generate(self, length,starting_sequence=[],mode="note",time_signature="2/4"): #,clean_measure=False
+    def generate(self, length,starting_sequence=[],mode="note",time_signature="2/4"):
         """
         Genere une melodie de la longueur voulue.
 
@@ -58,30 +61,12 @@ class MarkovChainMelodyGenerator:
             melody = [self._generate_starting_state()]
         else:
             melody = starting_sequence
-        '''
-        if clean_measure:
-            measureDuration = float(time_signature.split('/')[0])
-            measureCount = 0
-            measureTime = 0.0
-            for note_duration in melody:
-                measureTime+=note_duration[1]
-                if measureTime==measureDuration:
-                    measureTime = 0.0
-                    measureCount+=1
-                elif measureTime>measureDuration:
-                    measureTime = measureTime-measureDuration
-                    measureCount+=1
-            for _ in range(length):
-                if measureTime==measureDuration:
-                    measureTime = 0.0
-                    measureCount+=1
-                
-                
-                melody.append(self._generate_next_state_clean(melody[-1],measureDuration-measureTime))
-        ''' 
         if mode=="note":
-            for _ in range(len(melody), length-1):
-                melody.append(self._generate_next_state(melody[-1]))
+            for _ in range(len(melody), length):
+                next_state=self._generate_next_state(melody[-1])
+                if next_state=="end":
+                    return melody
+                melody.append(next_state)
         elif mode=="measure":
             measureDuration = float(time_signature.split('/')[0])
             totalTime = 0.0
@@ -90,6 +75,8 @@ class MarkovChainMelodyGenerator:
                 totalTime+=duration
             while totalTime<measureDuration*length:
                 next_state=self._generate_next_state(melody[-1])
+                if next_state=="end":
+                    return melody
                 melody.append(next_state)
                 totalTime+=float(next_state.split("-")[-1])
             if totalTime>measureDuration*length:
@@ -97,15 +84,14 @@ class MarkovChainMelodyGenerator:
                 last_state="-".join(n for n in last_state[:-1])+"-"+str(float(last_state[-1])-(totalTime-(measureDuration*length)))
                 melody[-1]=last_state
         else:
-            print("mode doit être égal à 'note' ou 'melody'")
+            print("mode doit etre egal à 'note' ou 'measure'")
             return None
 
         return melody
 
     def _normalize_initial_probabilities(self):
         """
-        Normalize the initial probabilities array such that the sum of all
-        probabilities equals 1.
+        Normalise le tableau des probabilites initiales de maniere a ce que la somme de toutes les probabilites soit égale à 1.
         """
         total = np.sum(self.initial_probabilities)
         if total:
@@ -115,10 +101,7 @@ class MarkovChainMelodyGenerator:
 
     def _normalize_transition_matrix(self):
         """
-        This method normalizes each row of the transition matrix so that the
-        sum of probabilities in each row equals 1. This is essential for the rows
-        of the matrix to represent probability distributions of
-        transitioning from one state to the next.
+        Normalise la matrice des probabilites de transition de maniere à ce que la somme des valeurs de chaque ligne soit égale à 1.
         """
 
         # Calculate the sum of each row in the transition matrix.
@@ -144,10 +127,10 @@ class MarkovChainMelodyGenerator:
 
     def _generate_starting_state(self):
         """
-        Generate a starting state based on the initial probabilities.
+        Genere un etat de depart a partir du vecteur de probabilites initiales.
 
-        Returns:
-            A state from the list of states.
+        Sortie:
+            Un etat string de la forme "note-duree".
         """
         initial_index = np.random.choice(
             list(self._state_indexes.values()), p=self.initial_probabilities
@@ -156,14 +139,13 @@ class MarkovChainMelodyGenerator:
 
     def _generate_next_state(self, current_state):
         """
-        Generate the next state based on the transition matrix and the current
-        state.
+        Genere l'etat suivant a partir de la matrice de transition et de l'etat actuel.
 
-        Parameters:
-            current_state: The current state in the Markov Chain.
+        Parametres:
+            current_state: L'etat actuel de la chaine de markov.
 
-        Returns:
-            The next state in the Markov Chain.
+        Sortie:
+            Un etat string de la forme "note-duree".
         """
         if current_state in self.states:
             if self._does_state_have_subsequent(current_state):
@@ -191,17 +173,26 @@ class MarkovChainMelodyGenerator:
 
     def _does_state_have_subsequent(self, state):
         """
-        Check if a given state has a subsequent state in the transition matrix.
+        Verifie si un etat donne a un etat suivant dans la matrice de transition.
 
-        Parameters:
-            state: The state to check.
+        Parametres:
+            state: L'etat a verifier.
 
-        Returns:
-            True if the state has a subsequent state, False otherwise.
+        Sortie:
+            Vrai si l'etat donne a un etat suivant dans la matrice de stransition, faux sinon.
         """
         return self.transition_matrix[self._state_indexes[state]].sum() > 0
 
 def extract_states(training_data):
+    """
+    Permet d'extraire une liste d'etat unique contenu dans des melodies.
+
+    Parametres:
+        training_data(liste de liste de string): Une liste de melodie qui sont elle même sous forme de liste de string "note-duree".
+
+    Sortie:
+        states (liste de string): une liste de string unique de la forme "note-duree" qui represente chaque etat.
+    """
     states=set()
     for melody in training_data:
         for note_duration in melody:
@@ -209,11 +200,15 @@ def extract_states(training_data):
 
     return list(states)
 
-def generated_to_json(title,generated_melodies,key="F",part="All"):
-    '''for melody in generated_melodies:
-        for i in range(len(melody)):
+def generated_to_json(file_name,generated_melodies,key="F"):
+    """
+    Permet d'enregistrer une liste de melodies generees dans un fichier .json situe dans Data/Generated.
 
-            melody[i]=(melody[i][0],melody[i][1])'''
-    generated = [ {'Title' : f"Markov {i+1}" , 'Part': part, 'Key' : key , 'Generated' : melody} for i, melody in enumerate(generated_melodies) ]
-    with open(f"Generated/{title}.json","w") as f:
+    Parametres:
+        file_name(string): Nom du fichier .json cree.
+        generated_melodies(liste de liste de string): Une liste de melodie generee qui sont elle même sous forme de liste de string "note-duree".
+        key(string): Cle globale de la melodie. "F" par defaut.
+    """
+    generated = [ {'Title' : f"Markov {i+1}" , 'Key' : key , 'Generated' : melody} for i, melody in enumerate(generated_melodies) ]
+    with open(f"Generated/{file_name}.json","w") as f:
         json.dump(generated,f,indent=2)
