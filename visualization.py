@@ -85,7 +85,6 @@ def visualize(time_signature,keys,melodies,compare=0,tempo=80):
             part.append(measure)
         measure = stream.Measure(measureCount)
         measureCount += 1
-
     score.append(part)
         
     return score
@@ -128,4 +127,17 @@ def show_all_generated(file_name,tempo=60):
     score = visualize(time_signature, keys, melodies,tempo=tempo)
     return score 
 
-
+def n_measure(melody,n,time_signature):
+    measureDuration = float(time_signature.split('/')[0])
+    totalTime = 0.0
+    for i in range(len(melody)):
+        duration=float(melody[i].split("-")[-1])
+        totalTime+=duration
+        if totalTime==measureDuration*n:
+            return melody[:i+1]
+        elif totalTime>measureDuration*n:
+            last_state=melody[i].split("-")
+            last_state="-".join(last_state[:-1])+"-"+str(float(last_state[-1])-(totalTime-(measureDuration*n)))
+            melody[i]=last_state
+            return melody[:i+1]
+    return melody

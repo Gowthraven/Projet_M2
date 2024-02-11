@@ -74,6 +74,9 @@ class MarkovChainMelodyGenerator:
                 duration=float(note_duration.split("-")[-1])
                 totalTime+=duration
             while totalTime<measureDuration*length:
+                
+                if not self._does_state_have_subsequent(melody[-1]):
+                    print("pouet")
                 next_state=self._generate_next_state(melody[-1])
                 if next_state=="end":
                     return melody
@@ -81,7 +84,7 @@ class MarkovChainMelodyGenerator:
                 totalTime+=float(next_state.split("-")[-1])
             if totalTime>measureDuration*length:
                 last_state=melody[-1].split("-")
-                last_state="-".join(n for n in last_state[:-1])+"-"+str(float(last_state[-1])-(totalTime-(measureDuration*length)))
+                last_state="-".join(last_state[:-1])+"-"+str(float(last_state[-1])-(totalTime-(measureDuration*length)))
                 melody[-1]=last_state
         else:
             print("mode doit etre egal à 'note' ou 'measure'")
@@ -147,29 +150,14 @@ class MarkovChainMelodyGenerator:
         Sortie:
             Un etat string de la forme "note-duree".
         """
-        if current_state in self.states:
-            if self._does_state_have_subsequent(current_state):
-                index = np.random.choice(
-                    list(self._state_indexes.values()),
-                    p=self.transition_matrix[self._state_indexes[current_state]],
-                )
-                return self.states[index]
-            return self._generate_starting_state()
-        return self._generate_starting_state()
-
-    def _generate_next_state_clean(self, current_state,remaining_time):
-        p_next_state=self.transition_matrix[self._state_indexes[current_state]][:]
-        for next_state in self._state_indexes.keys():
-            if next_state[1]<remaining_time:
-                p_next_state[self._state_indexes[next_state]]=0
-        if p_next_state.sum() > 0:
+        if self._does_state_have_subsequent(current_state):
             index = np.random.choice(
                 list(self._state_indexes.values()),
-                p=p_next_state,
+                p=self.transition_matrix[self._state_indexes[current_state]],
             )
             return self.states[index]
-        
-        return ("rest",remaining_time)
+        print("pouet")
+        return self._generate_starting_state()
 
     def _does_state_have_subsequent(self, state):
         """
@@ -182,6 +170,19 @@ class MarkovChainMelodyGenerator:
             Vrai si l'etat donne a un etat suivant dans la matrice de stransition, faux sinon.
         """
         return self.transition_matrix[self._state_indexes[state]].sum() > 0
+    
+    def _loop_transition_matrix(self):
+        change=True
+        removed_state=set()
+
+        while change:
+            change=False
+            for state in self.states[:-1]:
+                if state not in removed_state and not self._does_state_have_subsequent(state):
+                    self.transition_matrix[:,self._state_indexes[state]]=0
+                    change=True
+                    removed_state.add(state)
+        self._normalize_transition_matrix()
 
 def extract_states(training_data):
     """

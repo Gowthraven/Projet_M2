@@ -59,7 +59,7 @@ def data_to_json(folder,transpose=False):
                 D.append(dictionnary)
     return D
 
-def json_into_melody(file_path,output_file="dataset",size=1000):
+def json_into_melody(file_path,output_file="dataset",size=1000,time_signatures=set()):
     '''Enregistre la liste des x premieres melodies de data.json (taille melodie en mesure)'''
     if not(os.path.exists(file_path) and os.path.isfile(file_path)):
         print(f"The file '{file_path}' does not exist.  Exiting program.")
@@ -72,22 +72,23 @@ def json_into_melody(file_path,output_file="dataset",size=1000):
     #chaque partition
     for P in data:
         #chaque melodie
-        for part in P.keys()-("title","time_signature"):
-            melodie=[]
-            nb_measures=len(P[part].keys())-1
-            #chaque mesure
-            for k in range(1,nb_measures+1):
-                melodie.append(P[part][str(k)]["Melodie"])
-            if size< nb_measures:
-                melodies = [ melodie[i:i+size] for i in range(nb_measures-size) ] 
-                melodies = [ m for melo in melodies for m in melo]
-                for m in melodies:
-                    if m :
-                        dataset.append(m)
-            else:
-                melodie = [ m for melo in melodie for m in melo]
-                if melodie:
-                    dataset.append(melodie)
+        if time_signatures==set() or P["time_signature"] in time_signatures:
+            for part in P.keys()-("title","time_signature"):
+                melodie=[]
+                nb_measures=len(P[part].keys())-1
+                #chaque mesure
+                for k in range(1,nb_measures+1):
+                    melodie.append(P[part][str(k)]["Melodie"])
+                if size< nb_measures:
+                    melodies = [ melodie[i:i+size] for i in range(nb_measures-size) ] 
+                    melodies = [ m for melo in melodies for m in melo]
+                    for m in melodies:
+                        if m :
+                            dataset.append(m)
+                else:
+                    melodie = [ m for melo in melodie for m in melo]
+                    if melodie:
+                        dataset.append(melodie)
         
     with open('data/'+output_file+".json",'w') as file:
         json.dump(dataset,file) 
