@@ -455,7 +455,6 @@ def extract_random_seq(jsonfile,lg,part=None):
         # choix au hasard d'une partie de cette partition
         parts = [key for key in selected_score.keys()-("title","time_signature")]
         name_part = random.choice(parts) if part is None else part
-        print(name_part)
         selected_part = selected_score[name_part]
 
 
@@ -495,7 +494,7 @@ def data_to_json_incomplete(folder):
            
     return all_D
 
-def extract_seq_from(jsonfile,desired_score,desired_part):
+def extract_seq_from(jsonfile,desired_score,desired_part,mode=None):
     '''Retourne (nom de la partition, nom de la partie, clé, et les lg premieres notes sous forme de string) de la partie d'une partition données'''
     if not(os.path.isfile(jsonfile)):
         print(f"The file '{jsonfile}' does not exist.  Exiting program.")
@@ -520,7 +519,10 @@ def extract_seq_from(jsonfile,desired_score,desired_part):
         if part == desired_part:
             selected_part = selected_score[part]
             all_notes = [item['Notes'] for measure, item in selected_part.items() if measure.isdigit()]
-            all_notes= [str(n)+"-"+str(QUARTER_DURATION[d]*float(selected_score["time_signature"].split("/")[0])) for notes in all_notes for n,d in notes]
+            if mode is None:
+                all_notes= [str(n)+"-"+str(QUARTER_DURATION[d]*float(selected_score["time_signature"].split("/")[0])) for notes in all_notes for n,d in notes]
+            elif mode=="mesure":
+                all_notes= [ [str(n)+"-"+str(QUARTER_DURATION[d]*float(selected_score["time_signature"].split("/")[0])) for n,d in notes] for notes in all_notes ]
             break
 
     if selected_part == None:
