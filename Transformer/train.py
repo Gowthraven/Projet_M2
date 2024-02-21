@@ -56,6 +56,8 @@ def train(train_dataset, transformer, epochs):
         epochs (int): The number of epochs to train the model.
     """
     print("Training the model...")
+    iters,losses = [],[]
+    i=0
     for epoch in range(epochs):
         total_loss = 0
         # Iterate over each batch in the training dataset
@@ -66,6 +68,10 @@ def train(train_dataset, transformer, epochs):
             print(
                 f"Epoch {epoch + 1} Batch {batch + 1} Loss {batch_loss.numpy()}"
             )
+            iters.append(i)
+            losses.append(batch_loss)
+            i += 1
+    return iters,losses
 
 
 @tf.function

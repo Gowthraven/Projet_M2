@@ -54,7 +54,7 @@ class MelodyGenerator:
         self.tokenizer = tokenizer
         self.max_length = max_length
 
-    def generate(self, start_sequence, mode=2, temperature=1, k=20):
+    def generate(self, start_sequence, mode=2, temperature=1, k=20 , first_proba=0.8):
         """
         Generates a melody based on a starting sequence.
 
@@ -73,19 +73,23 @@ class MelodyGenerator:
             predictions = self.transformer(
                 input_tensor, input_tensor, False, None, None, None
             )
+            if (predictions.shape[1]==0):
+                print(start_sequence)
             if mode==0:
               predicted_note = self._get_note_with_highest_score(predictions,proba)
             elif mode==1:
               predicted_note = self._get_note_with_proba_temperature(predictions,temperature,proba)
             elif mode==2:
-              predicted_note = self._get_note_with_k_sampling(predictions,k,proba)
+              predicted_note = self._get_note_with_k_sampling(predictions,k,proba,first_proba)
 
-            
+
             input_tensor = self._append_predicted_note(
                 input_tensor, predicted_note
             )
 
         generated_melody = self._decode_generated_sequence(input_tensor)
+
+
 
         return generated_melody,[1]*len(start_sequence)+proba
 
@@ -117,7 +121,7 @@ class MelodyGenerator:
         latest_predictions = predictions[:, -1, :]
         predicted_note_index = tf.argmax(latest_predictions, axis=1)
         probas = np.exp(latest_predictions) / np.sum(np.exp(latest_predictions))
-        proba.append(probas[0][predicted_note_index])
+        proba.append(probas[0][predicted_note_index][0])
         predicted_note = tf.argmax(latest_predictions, axis=1)
         predicted_note = predicted_note.numpy().item()
         return predicted_note
@@ -136,8 +140,8 @@ class MelodyGenerator:
         probas = np.exp(latest_predictions) / np.sum(np.exp(latest_predictions))
         sorted_indices = np.argsort(probas[0])[::-1]
         s=np.sum(probas[0][sorted_indices[:3]])
-        
-        
+
+
         notes=tf.convert_to_tensor([sorted_indices[:3]], dtype=tf.int64)
         notes= self._decode_generated_sequence(notes)
 
@@ -147,7 +151,7 @@ class MelodyGenerator:
 
         return predicted_note
 
-    def _get_note_with_k_sampling(self, predictions,k,proba):
+    def _get_note_with_k_sampling(self, predictions,k,proba,first_proba):
         """
         Gets the note with the highest score from the predictions.
 
@@ -160,18 +164,19 @@ class MelodyGenerator:
         latest_predictions = predictions[:, -1, :]
         probas = np.exp(latest_predictions) / np.sum(np.exp(latest_predictions))
         sorted_indices = np.argsort(probas[0])[::-1]
-        s=np.sum(probas[0][sorted_indices[:3]])
+        
+        s=sum(probas[0][sorted_indices[:1]])
         T=1
-        while not(0.5< s < 0.6) and T<3:
+        while not( s < first_proba) and T<3:
             latest_predictions = predictions[:, -1, :]/T
             probas = np.exp(latest_predictions) / np.sum(np.exp(latest_predictions))
             sorted_indices = np.argsort(probas[0])[::-1]
             s=np.sum(probas[0][sorted_indices[:1]])
             T+=0.1
-        
+
         notes=tf.convert_to_tensor([sorted_indices], dtype=tf.int64)
         notes= self._decode_generated_sequence(notes)
-
+        
         top_k_indices= sorted_indices[:k]
         top_k_proba= probas[0][top_k_indices]/np.sum(probas[0][top_k_indices])
 
