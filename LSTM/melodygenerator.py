@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import sys
 
 
 class MelodyGenerator:
@@ -23,7 +24,7 @@ class MelodyGenerator:
         self.tokenizer = tokenizer
         self.max_length = max_length
 
-    def generate(self, start_sequence, mode=2, temperature=1, k=20):
+    def generate(self, start_sequence, teacher_forcing=False, melody=[], mode=2, temperature=1, k=20):
         """
         Generates a melody based on a starting sequence.
 
@@ -36,17 +37,28 @@ class MelodyGenerator:
         proba=[]
         input_tensor = self._get_input_tensor(start_sequence)
 
+        if teacher_forcing:
+            if melody==[]:
+                print("The given melody is empty while teacher forcing activated.")
+                sys.exit()
+            else:
+                true_tensor = self._get_true_tensor(melody[:len(start_sequence)+k])
+
         num_notes_to_generate = self.max_length - len(input_tensor[0])
 
-        for _ in range(num_notes_to_generate):
-            predictions = self.lstm(input_tensor)
+        for i in range(num_notes_to_generate):
+
+            if teacher_forcing:
+                predictions = self.lstm(true_tensor[:i+len(start_sequence)])
+            else:
+                predictions = self.lstm(input_tensor)
+
             if mode==0:
               predicted_note = self._get_note_with_highest_score(predictions,proba)
             elif mode==1:
               predicted_note = self._get_note_with_proba_temperature(predictions,temperature,proba)
             elif mode==2:
               predicted_note = self._get_note_with_k_sampling(predictions,k,proba)
-
             
             input_tensor = self._append_predicted_note(
                 input_tensor, predicted_note
@@ -70,6 +82,11 @@ class MelodyGenerator:
         input_tensor = tf.convert_to_tensor(input_sequence, dtype=tf.int64)
         return input_tensor
 
+    def _get_true_tensor(self, true_sequence):
+
+        true_sequence = self.tokenizer.texts_to_sequences([true_sequence])
+        true_tensor = tf.convert_to_tensor(true_sequence, dtype=tf.int64)
+        return true_tensor
 
     def _get_note_with_highest_score(self,predictions,proba):
         """
