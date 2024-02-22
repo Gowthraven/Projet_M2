@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 class BiLSTM(tf.keras.Model):
-    def __init__(self, vocab_size, embedding_dim, hidden_units, max_length_melody):
+    def __init__(self, vocab_size, embedding_dim, max_length_melody):
         super(BiLSTM, self).__init__()
 
         self.embedding = tf.keras.layers.Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_length_melody)
@@ -15,5 +15,5 @@ class BiLSTM(tf.keras.Model):
         x = self.batch_norm(x)
         x = self.dropout(x)
         x = self.bilstm(x)
-        output = self.dense(combined_output)
+        output = self.dense(x)
         return output
