@@ -34,10 +34,10 @@ class MelodyGenerator:
         """
         proba=[]
         input_tensor = self._get_input_tensor(start_sequence)
-        generated_melody_size = len(start_sequence) + 1
+        j = len(start_sequence) + 1
         num_notes_to_generate = self.max_length - len(input_tensor[0])
 
-        if forcing > 0 and generated_melody_size < len(melody):
+        if forcing > 0 and j < len(melody):
             random = np.random.rand(num_notes_to_generate)
         else:
             random = None
