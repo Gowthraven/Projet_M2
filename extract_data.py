@@ -118,10 +118,12 @@ def json_into_part_melody(file_path,output_file="dataset",size=1000,time_signatu
                   melodie.append(P[part][str(k)]["Melodie"])
               if size< nb_measures:
                   melodies = [ melodie[i:i+size] for i in range(nb_measures-size) ] 
-                  melodies = [ m for melo in melodies for m in melo]
                   for m in melodies:
                       if m :
-                          dataset[part].append(m)
+                          melo= [[ x for nx in m for x in nx]]
+                          print(melo)
+                          dataset[part].append(melo)
+                         
               else:
                   melodie = [ m for melo in melodie for m in melo]
                   if melodie:
