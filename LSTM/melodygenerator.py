@@ -1,7 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import sys
-
 
 class MelodyGenerator:
     """
@@ -24,7 +22,7 @@ class MelodyGenerator:
         self.tokenizer = tokenizer
         self.max_length = max_length
 
-    def generate(self, start_sequence, teacher_forcing=False, melody=[], mode=2, temperature=1, k=20):
+    def generate(self, start_sequence, forcing=0.2, melody=[], mode=2, temperature=1, k=20):
         """
         Generates a melody based on a starting sequence.
 
@@ -36,22 +34,20 @@ class MelodyGenerator:
         """
         proba=[]
         input_tensor = self._get_input_tensor(start_sequence)
-
-        if teacher_forcing:
-            if melody==[]:
-                print("The given melody is empty while teacher forcing activated.")
-                sys.exit()
-            else:
-                true_tensor = self._get_true_tensor(melody[:len(start_sequence)+k])
-
+        generated_melody_size = len(start_sequence) + 1
         num_notes_to_generate = self.max_length - len(input_tensor[0])
+
+        if forcing > 0 and generated_melody_size < len(melody):
+            random = np.random.rand(num_notes_to_generate)
+        else:
+            random = None
 
         for i in range(num_notes_to_generate):
 
-            if teacher_forcing:
-                predictions = self.lstm(true_tensor[:i+len(start_sequence)])
-            else:
+            if random == None or random > forcing:
                 predictions = self.lstm(input_tensor)
+            else:
+                predictions = self.lstm(true_tensor[:i+len(start_sequence)])
 
             if mode==0:
               predicted_note = self._get_note_with_highest_score(predictions,proba)
