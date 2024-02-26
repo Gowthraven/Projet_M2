@@ -91,7 +91,6 @@ class MelodyPreprocessor:
         input_sequences, target_sequences = self._create_sequence_pairs(
             tokenized_melodies
         )
-        
         input_sequences2, target_sequences2 = self._create_sequence_pairs_with_sliding_windows(
             tokenized_melodies
         )

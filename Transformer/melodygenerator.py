@@ -54,7 +54,7 @@ class MelodyGenerator:
         self.tokenizer = tokenizer
         self.max_length = max_length
 
-    def generate(self, start_sequence, mode=2, temperature=1, k=20 , first_proba=0.8):
+    def generate(self, start_sequence, forcing=0, melody=[],mode=2, temperature=1, k=20 , first_proba=0.8):
         """
         Generates a melody based on a starting sequence.
 
@@ -66,13 +66,29 @@ class MelodyGenerator:
         """
         proba=[]
         input_tensor = self._get_input_tensor(start_sequence)
-
+        true_tensor = self._get_input_tensor(melody)
+        
+        
         num_notes_to_generate = self.max_length - len(input_tensor[0])
 
-        for _ in range(num_notes_to_generate):
-            predictions = self.transformer(
-                input_tensor, input_tensor, False, None, None, None
-            )
+        if forcing > 0:
+            random = np.random.rand(num_notes_to_generate)
+        else:
+            random = None
+        
+        
+        for i in range(1,num_notes_to_generate+1):
+            if (random is None) or (random is not None and i+1 < len(random) and random[i] > forcing):
+                predictions = self.transformer(
+                        input_tensor, input_tensor, False, None, None, None
+                        )
+            else:
+                predictions = self.transformer(
+                        true_tensor[:i-1+len(start_sequence)], true_tensor[:i-1+len(start_sequence)], False, None, None, None
+                        )
+                      
+            
+            
             if (predictions.shape[1]==0):
                 print(start_sequence)
             if mode==0:
@@ -121,7 +137,7 @@ class MelodyGenerator:
         latest_predictions = predictions[:, -1, :]
         predicted_note_index = tf.argmax(latest_predictions, axis=1)
         probas = np.exp(latest_predictions) / np.sum(np.exp(latest_predictions))
-        proba.append(probas[0][predicted_note_index][0])
+        proba.append(probas[0][predicted_note_index])
         predicted_note = tf.argmax(latest_predictions, axis=1)
         predicted_note = predicted_note.numpy().item()
         return predicted_note
@@ -214,3 +230,58 @@ class MelodyGenerator:
             generated_sequence_array
         )[0]
         return generated_melody
+    
+def generate_seq(original,lg_debut,lg_predict):
+    original_size= len(original)
+    print(f'Nombre de mesures dans l\'original : {original_size}')
+    size=lg_debut+lg_predict
+    debuts=[]
+    fins=[]
+    for i in range(size,original_size+1):
+        seq_debut= [ n for  m in original[i-size:i-lg_predict] for n in m]
+        seq_originale= [ n for  m in original[i-size:i] for n in m if i<original_size]
+        debuts.append(seq_debut)
+        fins.append(seq_originale)
+    return debuts,fins,original_size
+
+def generate_decalage(melody_generator,original,lg_debut,lg_predict,mode=2,k=40,first_proba=0.8,time_signature="2/4"):
+    '''Genere une partie 
+      Parametres:
+            original (liste de string) : Partie originale
+            lg_debut (int) : Longueur sequence de départ en mesure
+            lg_fin (int) : Longueur sequence prédite en mesure
+            ***param du melody_generator.generate()
+    '''
+    melodie=[]
+    debuts,fins,original_size=generate_seq(original,lg_debut,lg_predict)
+    melodie.append(debuts[0])
+    probas= [[ 1 for m in debuts[0] for _ in m ]]
+    size=lg_debut+lg_predict
+    for i in range(len(debuts)):
+      new_melodie,p=melody_generator.generate(debuts[i],mode=mode,k=k)
+      new_melodie=new_melodie.split(' ')[len(debuts[i]):]
+      new_melodie=n_measure(new_melodie,lg_predict,time_signature)
+      melodie.append(new_melodie)
+      p= p[len(debuts[i]):len(debuts[i])+len(new_melodie)]
+      #print(new_melodie)
+      probas.append(p)
+      print(f'Mesure {size+i} : generated')
+    melodie = [ n for measure in melodie for n in measure ]
+    print("Melodie generated")
+    return melodie,probas
+
+def n_measure(melody,n,time_signature):
+    measureDuration = float(time_signature.split('/')[0])
+    totalTime = 0.0
+    for i in range(len(melody)):
+        duration=float(melody[i].split("-")[-1])
+        totalTime+=duration
+        if totalTime==measureDuration*n:
+            return melody[:i+1]
+        elif totalTime>measureDuration*n:
+            last_state=melody[i].split("-")
+            last_state="-".join(last_state[:-1])+"-"+str(float(last_state[-1])-(totalTime-(measureDuration*n)))
+            melody[i]=last_state
+            return melody[:i+1]
+    return melody
+    
