@@ -255,14 +255,14 @@ def generate_decalage(melody_generator,original,lg_debut,lg_predict,mode=2,k=40,
     melodie=[]
     debuts,fins,original_size=generate_seq(original,lg_debut,lg_predict)
     melodie.append(debuts[0])
-    probas= [[ 1 for m in debuts[0] for _ in m ]]
+    probas= [[1 for m in debuts[0] ]]
     size=lg_debut+lg_predict
     for i in range(len(debuts)):
       new_melodie,p=melody_generator.generate(debuts[i],mode=mode,k=k)
       new_melodie=new_melodie.split(' ')[len(debuts[i]):]
       new_melodie=n_measure(new_melodie,lg_predict,time_signature)
       melodie.append(new_melodie)
-      p= p[len(debuts[i]):len(debuts[i])+len(new_melodie)]
+      p= p[:len(new_melodie)]
       #print(new_melodie)
       probas.append(p)
       print(f'Mesure {size+i} : generated')
