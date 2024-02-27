@@ -107,7 +107,7 @@ class MelodyGenerator:
 
 
 
-        return generated_melody,[1]*len(start_sequence)+proba
+        return generated_melody,proba
 
     def _get_input_tensor(self, start_sequence):
         """
@@ -137,7 +137,7 @@ class MelodyGenerator:
         latest_predictions = predictions[:, -1, :]
         predicted_note_index = tf.argmax(latest_predictions, axis=1)
         probas = np.exp(latest_predictions) / np.sum(np.exp(latest_predictions))
-        proba.append(probas[0][predicted_note_index])
+        proba.append(probas[0][predicted_note_index][0])
         predicted_note = tf.argmax(latest_predictions, axis=1)
         predicted_note = predicted_note.numpy().item()
         return predicted_note
