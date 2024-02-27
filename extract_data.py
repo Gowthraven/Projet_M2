@@ -4,6 +4,7 @@ import music21
 import os
 import random
 from music21 import *
+import numpy as np
 
 MARKS=['A','B','C','D']
 QUARTER_DURATION= { '64th' : 0.03125 , '32nd': 0.0625, '16th' : 0.125 , 'eighth' : 0.25 ,'quarter' : 0.5 ,'half' : 1,'whole' : 1}
@@ -58,6 +59,21 @@ def data_to_json(folder,transpose=False):
                 dictionnary= score_to_dict(transposed_score,transpose=" "+str(+1))
                 D.append(dictionnary)
     return D
+
+def compute_stat(file_path):
+    '''Retourne la moyenne des moyennes et ecart type des probabilité des notes choisies'''
+    check_file_exists(file_path)
+    with open(file_path,'r') as file: 
+        data= json.load(file)
+    
+    probas= [ generated['Proba'] for generated in data]
+    means=[]
+    stds=[]
+    for p in probas:
+        proba=np.array([ float(prob) for prob in p if prob!='1'])
+        means.append(np.mean(proba))
+        stds.append(np.std(proba))
+    return np.mean(means),np.mean(stds)
 
 def json_into_melody(file_path,output_file="dataset",size=1000,time_signatures=set()):
     '''Enregistre la liste des x premieres melodies de data.json (taille melodie en mesure)'''
