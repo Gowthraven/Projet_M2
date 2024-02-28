@@ -22,7 +22,7 @@ class MelodyGenerator:
         self.tokenizer = tokenizer
         self.max_length = max_length
 
-    def generate(self, start_sequence, forcing=0.2, melody=[], mode=2, temperature=1, k=20):
+    def generate(self, start_sequence, forcing=0, melody=[], mode=2, temperature=1, k=20, first_proba=0.8):
         """
         Generates a melody based on a starting sequence.
 
@@ -34,35 +34,39 @@ class MelodyGenerator:
         """
         proba=[]
         input_tensor = self._get_input_tensor(start_sequence)
-        j = len(start_sequence) + 1
+        true_tensor = self._get_input_tensor(melody)
+
         num_notes_to_generate = self.max_length - len(input_tensor[0])
 
-        if forcing > 0 and j < len(melody):
+        if forcing > 0:
             random = np.random.rand(num_notes_to_generate)
         else:
             random = None
 
-        for i in range(num_notes_to_generate):
+        for i in range(1,num_notes_to_generate+1):
 
-            if random == None or random > forcing:
+            if (random is None) or (random is not None and i+1 < len(random) and random[i] > forcing):
                 predictions = self.lstm(input_tensor)
             else:
-                predictions = self.lstm(true_tensor[:i+len(start_sequence)])
+                predictions = self.lstm(true_tensor[:i-1+len(start_sequence)])
 
+            if (predictions.shape[1]==0):
+                print(start_sequence)
             if mode==0:
               predicted_note = self._get_note_with_highest_score(predictions,proba)
             elif mode==1:
               predicted_note = self._get_note_with_proba_temperature(predictions,temperature,proba)
             elif mode==2:
-              predicted_note = self._get_note_with_k_sampling(predictions,k,proba)
-            
+              predicted_note = self._get_note_with_k_sampling(predictions,k,proba,first_proba)
+
+
             input_tensor = self._append_predicted_note(
                 input_tensor, predicted_note
             )
 
         generated_melody = self._decode_generated_sequence(input_tensor)
 
-        return generated_melody,[1]*len(start_sequence)+proba
+        return generated_melody,proba
 
     def _get_input_tensor(self, start_sequence):
         """
@@ -127,7 +131,7 @@ class MelodyGenerator:
 
         return predicted_note
 
-    def _get_note_with_k_sampling(self, predictions,k,proba):
+    def _get_note_with_k_sampling(self, predictions,k,proba,first_proba):
         """
         Gets the note with the highest score from the predictions.
 
@@ -140,9 +144,10 @@ class MelodyGenerator:
         latest_predictions = predictions[:, -1, :]
         probas = np.exp(latest_predictions) / np.sum(np.exp(latest_predictions))
         sorted_indices = np.argsort(probas[0])[::-1]
+        
         s=np.sum(probas[0][sorted_indices[:3]])
         T=1
-        while not(0.5< s < 0.6) and T<3:
+        while not(s < first_proba) and T<3:
             latest_predictions = predictions[:, -1, :]/T
             probas = np.exp(latest_predictions) / np.sum(np.exp(latest_predictions))
             sorted_indices = np.argsort(probas[0])[::-1]
@@ -189,3 +194,57 @@ class MelodyGenerator:
             generated_sequence_array
         )[0]
         return generated_melody
+
+def generate_seq(original,lg_debut,lg_predict):
+    original_size= len(original)
+    print(f'Nombre de mesures dans l\'original : {original_size}')
+    size=lg_debut+lg_predict
+    debuts=[]
+    fins=[]
+    for i in range(size,original_size+1):
+        seq_debut= [ n for  m in original[i-size:i-lg_predict] for n in m]
+        seq_originale= [ n for  m in original[i-size:i] for n in m if i<original_size]
+        debuts.append(seq_debut)
+        fins.append(seq_originale)
+    return debuts,fins,original_size
+
+def generate_decalage(melody_generator,original,lg_debut,lg_predict,mode=2,k=40,first_proba=0.8,time_signature="2/4"):
+    '''Genere une partie 
+      Parametres:
+            original (liste de string) : Partie originale
+            lg_debut (int) : Longueur sequence de départ en mesure
+            lg_fin (int) : Longueur sequence prédite en mesure
+            ***param du melody_generator.generate()
+    '''
+    melodie=[]
+    debuts,fins,original_size=generate_seq(original,lg_debut,lg_predict)
+    melodie.append(debuts[0])
+    probas= [[1 for m in debuts[0] ]]
+    size=lg_debut+lg_predict
+    for i in range(len(debuts)):
+      new_melodie,p=melody_generator.generate(debuts[i],mode=mode,k=k)
+      new_melodie=new_melodie.split(' ')[len(debuts[i]):]
+      new_melodie=n_measure(new_melodie,lg_predict,time_signature)
+      melodie.append(new_melodie)
+      p= p[:len(new_melodie)]
+      #print(new_melodie)
+      probas.append(p)
+      print(f'Mesure {size+i} : generated')
+    melodie = [ n for measure in melodie for n in measure ]
+    print("Melodie generated")
+    return melodie,probas
+
+def n_measure(melody,n,time_signature):
+    measureDuration = float(time_signature.split('/')[0])
+    totalTime = 0.0
+    for i in range(len(melody)):
+        duration=float(melody[i].split("-")[-1])
+        totalTime+=duration
+        if totalTime==measureDuration*n:
+            return melody[:i+1]
+        elif totalTime>measureDuration*n:
+            last_state=melody[i].split("-")
+            last_state="-".join(last_state[:-1])+"-"+str(float(last_state[-1])-(totalTime-(measureDuration*n)))
+            melody[i]=last_state
+            return melody[:i+1]
+    return melody
