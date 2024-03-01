@@ -212,9 +212,17 @@ def extract_notes(score):
                 if isinstance(element,music21.note.Rest):
                     if element.duration.type!='complex':
                         notes_and_rests.append((element.name,element.duration.type))
+                #if isinstance(element,music21.stream.Voice) and "1" in str(element):
+                if str(element)=="<music21.stream.Voice 1>":
+                    for e in element:
+                        if isinstance(e,music21.note.Note):
+                            notes_and_rests.append((e.nameWithOctave, e.duration.type))
+                        if isinstance(e,music21.note.Rest):
+                            if e.duration.type!='complex':
+                                notes_and_rests.append((e.name, e.duration.type))
+                    
             if notes_and_rests:
                 notes_dic[measure.number] = notes_and_rests
-
     return notes_dic
 
 def extract_chord_symbols(score):
@@ -390,7 +398,6 @@ def sync_segment_parts(list_segments, list_parts):
     return sync
 
 def score_to_dict(score,transpose=""):
-    D=dict()
     nb_measures= get_number_of_measures(score)
     chord_symbols = extract_chord_symbols(score)
     note_symbols=extract_notes(score)
@@ -400,7 +407,6 @@ def score_to_dict(score,transpose=""):
     exp=extract_expression(score)
     keys=get_keys(score)
     t=get_time_signature(score)
-
     segments_end = [ s[0][1] for s in repeat_mark.values()] #premier segment de chaque repetition
     starts= [ i for m,i in rehearsal_mark_indices]
     if  "Ainda me Recordo" in score.metadata.title+transpose: #cas particulier de data fixed
@@ -428,11 +434,10 @@ def score_to_dict(score,transpose=""):
         
     s= [ (s,e) for (i,s),e in zip(rehearsal_mark_indices,ends)]
    
+    D=dict()
     D['title']=score.metadata.title+transpose
     D['time_signature']=t
     seg_i=0
-    #print(D['title'])
-    #print(s)
     for mark,(part_name,i) in enumerate(rehearsal_mark_indices):
         part_name=part_name[36:-2]
         D[part_name]= dict()
@@ -498,16 +503,17 @@ def data_to_json_incomplete(folder):
     for i,D in enumerate(data):
         new_D = {"title" :  D["title"] ,  "time_signature" : D["time_signature"] }
         valid_check=True
-        for part in D.keys()-("title","time_signature"):
-            new_D[part]=dict()
-            if len(D[part].keys())>2:
-                for k in range(1,len(D[part].keys())):
-                    new_D[part][str(k)] = D[part][str(k)]["Melodie"] if k%2==1 else []
-                new_D[part]["key"]=D[part]["key"]
-            else:
-                valid_check=False
-        if valid_check:
-            all_D.append(new_D)
+        if D["title"]=="HOMENAGEM À VELHA GUARDA.xml":
+            for part in D.keys()-("title","time_signature"):
+                new_D[part]=dict()
+                if len(D[part].keys())>2:
+                    for k in range(1,len(D[part].keys())):
+                        new_D[part][str(k)] = D[part][str(k)]["Melodie"] if k%2==1 else []
+                    new_D[part]["key"]=D[part]["key"]
+                else:
+                    valid_check=False
+            if valid_check:
+                all_D.append(new_D)
            
     return all_D
 
