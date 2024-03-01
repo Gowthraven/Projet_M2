@@ -213,7 +213,7 @@ def extract_notes(score):
                     if element.duration.type!='complex':
                         notes_and_rests.append((element.name,element.duration.type))
             if notes_and_rests:
-                notes_dic[m] = notes_and_rests
+                notes_dic[measure.number] = notes_and_rests
 
     return notes_dic
 
@@ -355,7 +355,7 @@ def show_stat(score):
     print('keys: ',keys)
     print('time signature: ',t)
     print('marques de repet :',rehearsal_mark_indices)
-    for m in range(1,nb_measures+1):
+    for m in note_symbols.keys():
         print(f"Mesure {m}:")
         if m in chord_symbols:
             print('Accord:',chord_symbols[m])
