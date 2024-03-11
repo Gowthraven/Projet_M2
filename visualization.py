@@ -14,6 +14,9 @@ def visualize(time_signature,keys,melodies,compare=0,tempo=80):
         Sortie:
             score (music21 score): La partition contenant l'ensemble des melodies separees par 5 mesures de silence.
     """
+    if len(keys)!=len(melodies):
+        print("Il doit y avoir une cle par melodie")
+        return None
     score = stream.Score()
     score.metadata = metadata.Metadata(title="Melodies generated")
     N=len(keys)
@@ -79,6 +82,97 @@ def visualize(time_signature,keys,melodies,compare=0,tempo=80):
         part.append(measure)
         measureTime = 0.0
         for _ in range(5):
+            measure = stream.Measure(measureCount)
+            measureCount += 1
+            measure.append(note.Rest(quarterLength=measureDuration))
+            part.append(measure)
+        measure = stream.Measure(measureCount)
+        measureCount += 1
+    score.append(part)
+        
+    return score
+
+
+def compare_all_generated(file_name='generated.json',rests=2):
+
+    if not(os.path.exists(file_name) and os.path.isfile(file_name)):
+        print(f"The file '{file_name}' does not exist. Exiting program.")
+        return None
+    
+    with open(file_name, 'r') as file:
+        generated = json.load(file)
+    
+    time_signature = "2/4"  # À modifier si nécessaire
+    melodies=[]
+    keys=[]
+    for i in range(len(generated)):
+        melodies.append(generated[i]["Generated"])
+        melodies.append(generated[i]["Original"])
+        keys.append(generated[i]["Key"])
+        keys.append(generated[i]["Key"])
+    
+    score = stream.Score()
+    score.metadata = metadata.Metadata(title="Melodies generated")
+    N=len(keys)
+    part = stream.Part()
+    part.append(meter.TimeSignature(time_signature))
+    measure=stream.Measure(0)
+    measureDuration=float(time_signature.split('/')[0])
+    measureCount=1
+    for i in range(N):
+        if i%2==1 :
+            name=generated[i//2]["Title"]+" - "+str(generated[i//2]["Mesure"])
+        else :
+            name=f"Melody {(i//2)+1} generated"
+        measure.append(expressions.RehearsalMark(name))
+        keysplit=keys[i].split(" ")
+        if keys[i]=="<music21.key.KeySignature of no sharps or flats>" :
+            measure.append(key.KeySignature(0))
+        elif len(keysplit)==2:
+            measure.append(key.Key(keysplit[0],keysplit[1]))
+        else:
+            measure.append(key.Key(keys[i]))
+        measureTime=0.0
+        measure.append(music21.tempo.MetronomeMark(number=60))
+        for note_duration in melodies[i]:
+            note_duration=note_duration.split("-")
+            if len(note_duration)==2:
+                note_name,duration=note_duration[0],float(note_duration[1])
+            else:
+                note_name,duration="-".join(n for n in note_duration[:-1]),float(note_duration[-1])
+            if measureTime==measureDuration: #si la mesure est finie on l'ajoute
+                part.append(measure)
+                measureTime=0.0
+                measure=stream.Measure(measureCount)
+                measureCount+=1
+
+            if measureTime+duration>measureDuration: #La note dépase la mesure, on coupe
+                if note_name=="rest":
+                    measure.append(note.Rest(quarterLength=measureDuration-(measureTime)))
+                else:
+                    note1=note.Note(note_name,quarterLength=measureDuration-(measureTime))
+                    measure.append(note1) 
+                    note1.tie = tie.Tie()
+                part.append(measure)
+                measure=stream.Measure(measureCount)
+                measureCount+=1
+                if note_name=="rest":
+                    measure.append(note.Rest(quarterLength=duration-(measureDuration-(measureTime))))
+                else:
+                    measure.append(note.Note(note_name,quarterLength=duration-(measureDuration-(measureTime))))
+                measureTime=duration-(measureDuration-(measureTime))
+            else:
+                measureTime+=duration
+                if note_name=="rest":
+                    measure.append(note.Rest(quarterLength=duration))
+                else:
+                    measure.append(note.Note(note_name,quarterLength=duration))
+            
+        if measureTime!=measureDuration:
+            measure.append(note.Rest(quarterLength=measureDuration-(measureTime))) 
+        part.append(measure)
+        measureTime = 0.0
+        for _ in range(rests):
             measure = stream.Measure(measureCount)
             measureCount += 1
             measure.append(note.Rest(quarterLength=measureDuration))

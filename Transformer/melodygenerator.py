@@ -31,6 +31,10 @@ specifically trained for melody generation tasks.
 
 import tensorflow as tf
 import numpy as np
+import random
+import matplotlib.pyplot as plt
+
+
 
 
 class MelodyGenerator:
@@ -54,7 +58,7 @@ class MelodyGenerator:
         self.tokenizer = tokenizer
         self.max_length = max_length
 
-    def generate(self, start_sequence, forcing=0, melody=[],mode=2, temperature=1, k=20 , first_proba=0.8):
+    def generate(self, start_sequence, forcing=0, melody=[],mode=2, temperature=1, k=20 , first_proba=0.8,affichage_histogramme=False):
         """
         Generates a melody based on a starting sequence.
 
@@ -92,11 +96,11 @@ class MelodyGenerator:
             if (predictions.shape[1]==0):
                 print(start_sequence)
             if mode==0:
-              predicted_note = self._get_note_with_highest_score(predictions,proba)
+                predicted_note = self._get_note_with_highest_score(predictions,proba)
             elif mode==1:
-              predicted_note = self._get_note_with_proba_temperature(predictions,temperature,proba)
+                predicted_note = self._get_note_with_proba_temperature(predictions,temperature,proba)
             elif mode==2:
-              predicted_note = self._get_note_with_k_sampling(predictions,k,proba,first_proba)
+                predicted_note = self._get_note_with_k_sampling(predictions,k,proba,first_proba,affichage_histogramme)
 
 
             input_tensor = self._append_predicted_note(
@@ -137,9 +141,16 @@ class MelodyGenerator:
         latest_predictions = predictions[:, -1, :]
         predicted_note_index = tf.argmax(latest_predictions, axis=1)
         probas = np.exp(latest_predictions) / np.sum(np.exp(latest_predictions))
-        proba.append(probas[0][predicted_note_index][0])
+        proba.append(probas[0][predicted_note_index])
         predicted_note = tf.argmax(latest_predictions, axis=1)
         predicted_note = predicted_note.numpy().item()
+        proba.append(probas[0][predicted_note_index])
+        
+        
+        
+        
+        
+        
         return predicted_note
 
     def _get_note_with_proba_temperature(self, predictions,T,proba):
@@ -167,7 +178,7 @@ class MelodyGenerator:
 
         return predicted_note
 
-    def _get_note_with_k_sampling(self, predictions,k,proba,first_proba):
+    def _get_note_with_k_sampling(self, predictions,k,proba,first_proba,affichage_histogramme):
         """
         Gets the note with the highest score from the predictions.
 
@@ -180,27 +191,32 @@ class MelodyGenerator:
         latest_predictions = predictions[:, -1, :]
         probas = np.exp(latest_predictions) / np.sum(np.exp(latest_predictions))
         sorted_indices = np.argsort(probas[0])[::-1]
+        notes=tf.convert_to_tensor([sorted_indices], dtype=tf.int64)
+        notes= self._decode_generated_sequence(notes)
+        notes=notes.split(' ')
+        probabilities=list(probas[0][sorted_indices])
         
         s=sum(probas[0][sorted_indices[:1]])
         T=1
-        while not( s < first_proba) and T<3:
+        while not( s < first_proba) and T<20:
             latest_predictions = predictions[:, -1, :]/T
             probas = np.exp(latest_predictions) / np.sum(np.exp(latest_predictions))
             sorted_indices = np.argsort(probas[0])[::-1]
             s=np.sum(probas[0][sorted_indices[:1]])
             T+=0.1
 
-        notes=tf.convert_to_tensor([sorted_indices], dtype=tf.int64)
-        notes= self._decode_generated_sequence(notes)
+        
         
         top_k_indices= sorted_indices[:k]
         top_k_proba= probas[0][top_k_indices]/np.sum(probas[0][top_k_indices])
-
+        
         predicted_note= np.random.choice(top_k_indices, p=top_k_proba, replace=False)
-
         selected_index= np.where(top_k_indices == predicted_note)[0]
-
         proba.append(top_k_proba[selected_index][0])
+        
+        if affichage_histogramme:
+            afficher_histogrammes_compare(notes[:k], probabilities[:k], top_k_proba)
+        
         return predicted_note
 
     def _append_predicted_note(self, input_tensor, predicted_note):
@@ -284,4 +300,43 @@ def n_measure(melody,n,time_signature):
             melody[i]=last_state
             return melody[:i+1]
     return melody
+
+##AFFICHAGE GRAPHIQUE
+def afficher_histogrammes_compare(labels, probas1, probas2):
+    # Créer une palette de couleurs
+    colors = plt.cm.tab10(np.arange(len(labels)))
+
+    # Créer une figure et deux axes
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3))
+
+    # Créer l'histogramme pour le premier ensemble de données avec les couleurs correspondantes
+    ax1.bar(labels, probas1, color=colors)
+    ax1.set_xlabel('Notes')
+    ax1.set_ylabel('Probabilités')
+    ax1.set_title('Originales')
+
+    # Créer l'histogramme pour le deuxième ensemble de données avec les mêmes couleurs
+    ax2.bar(labels, probas2, color=colors)
+    ax2.set_xlabel('Notes')
+    ax2.set_ylabel('Probabilités')
+    ax2.set_title('Après traitement')
+
+    # Faire pivoter les étiquettes sur l'axe des x pour une meilleure lisibilité
+    ax1.tick_params(axis='x', rotation=75,labelsize=8)
+    ax2.tick_params(axis='x', rotation=75,labelsize=8)
+   
+    # Ajuster la disposition pour éviter les chevauchements
+    plt.tight_layout()
+
+    # Afficher les histogrammes
+    plt.show()  
     
+def plot_losses(iters,losses,batchs):
+    plt.plot(iters,losses, label='Training Loss')
+    for i in range(batchs,len(iters),batchs):
+        plt.axvline(x=i, color='r', linestyle='--', linewidth=1)
+    plt.xlabel('Batch')
+    plt.ylabel('Loss')
+    plt.title('Training Loss Over Batches')
+    plt.legend()
+    plt.show()
