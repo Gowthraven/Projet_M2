@@ -26,7 +26,7 @@ Pour ce faire, nous avons mis en œuvre trois types de modèles : Modèles LSTM 
  ### Modules python
  * matplotlib
  * numpy
- * pandas
+ * seaborn
  * networkx          
  * tensorflow                2.11.0
  * music21                   7.3.3
