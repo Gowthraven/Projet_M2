@@ -17,9 +17,15 @@
   * **LSTM.ipynb** : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele LSTM , entraintement , génération et visualisation
   
   
-  [Usage]
+ 
 ## Requirements
-  [Requirement]
+ ###Modules python
+ * matplotlib
+ * numpy          
+ * tensorflow                2.11.0
+ * music21                   7.3.3
+ ###Application 
+ * Musescore3+
 
 ## Crédits
 Ce projet inclut des portions de code (/Transformeur) provenant du programme original détenu par Valerio Velardo. Le copyright du programme original est détenu par Valerio Velardo et sous licence MIT. Pour plus d'informations sur le programme original, consultez son dépôt [(https://github.com/musikalkemist/generativemusicaicourse/tree/main)].
