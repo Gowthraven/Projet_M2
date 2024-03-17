@@ -19,6 +19,8 @@
   
  
 ## Requirements
+ ### /Data/data_xml
+ Le dossier contenant les 171 partitions en fichier xml.
  ### Modules python
  * matplotlib
  * numpy          
