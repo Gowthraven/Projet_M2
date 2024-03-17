@@ -19,12 +19,12 @@
   
  
 ## Requirements
- ###Modules python
+ ### Modules python
  * matplotlib
  * numpy          
  * tensorflow                2.11.0
  * music21                   7.3.3
- ###Application 
+ ### Application 
  * Musescore3+
 
 ## Crédits
