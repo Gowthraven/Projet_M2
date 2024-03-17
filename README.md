@@ -11,9 +11,9 @@ Pour ce faire, nous avons mis en œuvre trois types de modèles : Modèles LSTM 
   ### Extract_data_interface.ipynb
   Permet d'utiliser les fonctions pour extraire les données des fichiers xml et l'extraction de melodies pour analyser les données
   ### /Analyse
-  * **analyse_chords.ipynb**  : 
-  * **Dataset_Stats.ipynb** : 
-  * **Graph-stat.ipynb** : 
+  * **analyse_chords.ipynb**  : Notebook d'aide pour la réparation future des données à la main. 
+  * **Dataset_Stats.ipynb** : Notebook contenant toute l'analyse du dataset : signature temporelle, répartition des clés, pourcentage de chaque note, répartition des accords et expressions. 
+  * **Graph-stat.ipynb** : Notebook contenant les graphes de transition de notes des différentes parties des partitions du dataset. 
   ### /Generation
   * **Markov.ipynb**  : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele Markov , entrainement , génération et visualisation
   * **Transformer.ipynb** : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele Transformer , entrainement , génération et visualisation
@@ -37,5 +37,5 @@ Pour ce faire, nous avons mis en œuvre trois types de modèles : Modèles LSTM 
  * Musescore3+
 
 ## Crédits
-Ce projet inclut des portions de code (Generation/Transformeur et Generation/Markov) provenant du programme original détenu par Valerio Velardo. Le copyright du programme original est détenu par Valerio Velardo et sous licence MIT. Pour plus d'informations sur le programme original, consultez son dépôt [(https://github.com/musikalkemist/generativemusicaicourse/tree/main)].
+Ce projet inclut des portions de code (Generation/Transformeur et Generation/Markov) provenant du programme original détenu par Valerio Velardo. Le copyright du programme original est détenu par Valerio Velardo et sous licence MIT. Pour plus d'informations sur le programme original, [consultez son dépôt](https://github.com/musikalkemist/generativemusicaicourse/tree/main).
 
