@@ -3,13 +3,19 @@
 ## Description
   [Une brève description de votre projet]
 ## Usage
-  ### extract_data.py
-  * **python extract_data.py**  : créer le fichier Data/data.json contenant toutes les partitions selon la structure du fichier structure.json
-  * **python extract_data.py** "nom_fichier_xml"  : affiche le contenu de la partition
-  * **python extract_data.py** "melodies"  : créer le fichier Data/dataset.json contenant toutes les melodies du fichiers data.json sous forme de liste
-  * **python extract_data.py** "x" "melodies"  : créer le fichier Data/dataset.json contenant les x premieres melodies du fichiers data.json sous forme de liste
-  * **python extract_data.py** "lg" "random" : créer un fichier data/random_seq.json contenant (nom de la partition, nom de la partie, clé, et les lg premieres notes sous forme de string) d'une partie d'une partition au hasard
-  * **python extract_data.py** "score" "part" "random" : créer un fichier data/random_seq_from_[score]_[part].json contenant (nom de la partition, nom de la partie, clé, toutes les notes de la partie) d'une partie d'une partition données
+  ### show_melody.ipynb
+  Permet de visualiser les mélodies générées presentes dans "Generation/Generated"
+  ### Extract_data_interface.ipynb
+  Permet d'utiliser les fonctions pour extraire les données des fichiers xml et l'extraction de melodies pour analyser les données
+  ### Analyse
+  * **analyse_chords.ipynb**  : 
+  * **Dataset_Stats.ipynb** : 
+  * **Graph-stat.ipynb** : 
+  ### Generation
+  * **Markov.ipynb**  : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele Markov , entraintement , génération et visualisation
+  * **Transformer.ipynb** : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele Transformer , entraintement , génération et visualisation
+  * **LSTM.ipynb** : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele LSTM , entraintement , génération et visualisation
+  
   
   [Usage]
 ## Requirements
