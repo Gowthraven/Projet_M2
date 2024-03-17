@@ -12,9 +12,9 @@
   * **Dataset_Stats.ipynb** : 
   * **Graph-stat.ipynb** : 
   ### /Generation
-  * **Markov.ipynb**  : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele Markov , entraintement , génération et visualisation
-  * **Transformer.ipynb** : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele Transformer , entraintement , génération et visualisation
-  * **LSTM.ipynb** : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele LSTM , entraintement , génération et visualisation
+  * **Markov.ipynb**  : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele Markov , entrainement , génération et visualisation
+  * **Transformer.ipynb** : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele Transformer , entrainement , génération et visualisation
+  * **LSTM.ipynb** : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele LSTM , entrainement , génération et visualisation
   
   
  
