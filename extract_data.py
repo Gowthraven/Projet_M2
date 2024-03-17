@@ -47,7 +47,7 @@ def data_to_json(folder,transpose=False):
     '''Retourne la liste des dictionnaire'''
     D=[]
     for i,file in enumerate(os.listdir(folder)) :
-        if file[-3:] =="xml":
+        if file[-3:] =="xml" and ("SARAU PARA RADAMÉS" not in file and  "HOMENAGEM À VELHA GUARDA" not in file): #partition erreur 1024th
             s=music21.converter.parse(folder+"/"+file)
             dictionnary= score_to_dict(s)
             D.append(dictionnary)
@@ -556,51 +556,4 @@ def extract_seq_from(jsonfile,desired_score,desired_part,mode=None):
 
     return seq_from
 
-if __name__ == "__main__":
-    path="data/data_xml"
-    check_folder_exists(path)
-    if len(sys.argv) == 2:
-        score_name=sys.argv[1]
-        if score_name =="melodies":
-            n=json_into_melody("data/data.json")
-            print(f"Toutes les melodies ({n}) ont étés générées.")
-        elif score_name=="melodiesparts":
-            parts_len=json_into_part_melody("data/data.json")
-            print("Toutes les melodies ont étés générées par parties. Tailles des parties : "+" ".join([f"{key} : {length} " for key,length in parts_len]))
-        else:
-            s=open_one_xml(path,score_name)
-            show_stat(s)
 
-    elif len(sys.argv) == 1:
-        file_output="data/data.json"
-        D= data_to_json(path)
-        with open(file_output, 'w',encoding="utf-8") as f:
-            json.dump(D,f,indent=2)
-        print(f'{file_output} with {len(D)} scores created.')
-
-    elif len(sys.argv) == 3:
-        x=int(sys.argv[1])
-        y=sys.argv[2]
-        if y == "random":
-            jsonfile = "data/data.json"
-            seq= extract_random_seq(jsonfile,x)
-            print(f'Random sequence of {x} notes generated {seq}.')
-        else:
-            print("Le deuxieme argument != melodies ou != random")
-            sys.exit()
-
-    elif len(sys.argv) == 4:
-        score = sys.argv[1]
-        part = sys.argv[2]
-        x = sys.argv[3]
-        if x == "random":
-            jsonfile = "data/data.json"
-            seq=extract_seq_from(jsonfile,score,part)
-            print(f'Sequence generated {seq}.')
-        else:
-            print("Le troisième argument != random")
-            sys.exit()
-
-    else:
-        print("L'application prend soit 1 fichier xml en entree (affichage de la partition) soit 0 argument (tous les XML sont extraits dans data.jspn")
-        sys.exit()
