@@ -8,12 +8,12 @@ Pour ce faire, nous avons mis en œuvre trois types de modèles : Modèles LSTM 
 ## Usage
   ### show_melody.ipynb
   Permet de visualiser les mélodies générées presentes dans "Generation/Generated"
-  ### Extract_data_interface.ipynb
+  ### extract_data_interface.ipynb
   Permet d'utiliser les fonctions pour extraire les données des fichiers xml et l'extraction de melodies pour analyser les données
   ### /Analyse
   * **analyse_chords.ipynb**  : Notebook d'aide pour la réparation future des données à la main. 
-  * **Dataset_Stats.ipynb** : Notebook contenant toute l'analyse du dataset : signature temporelle, répartition des clés, pourcentage de chaque note, répartition des accords et expressions. 
-  * **Graph-stat.ipynb** : Notebook contenant les graphes de transition de notes des différentes parties des partitions du dataset. 
+  * **dataset_Stats.ipynb** : Notebook contenant toute l'analyse du dataset : signature temporelle, répartition des clés, pourcentage de chaque note, répartition des accords et expressions. 
+  * **graph-stat.ipynb** : Notebook contenant les graphes de transition de notes des différentes parties des partitions du dataset. 
   ### /Generation
   * **Markov.ipynb**  : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele Markov , entrainement , génération et visualisation
   * **Transformer.ipynb** : Notebook contenant toute la pipeline : traitement données, création du dataset , création du modele Transformer , entrainement , génération et visualisation
