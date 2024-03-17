@@ -23,7 +23,9 @@
  Le dossier contenant les 171 partitions en fichier xml.
  ### Modules python
  * matplotlib
- * numpy          
+ * numpy
+ * pandas
+ * networkx          
  * tensorflow                2.11.0
  * music21                   7.3.3
  ### Application 
